@@ -1,0 +1,50 @@
+{
+  "name": "create-wasm-app",
+  "version": "0.1.0",
+  "description": "create an app to consume rust-generated wasm packages",
+  "main": "index.js",
+  "bin": {
+    "create-wasm-app": ".bin/create-wasm-app.js"
+  },
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "start": "webpack server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rustwasm/create-wasm-app.git"
+  },
+  "keywords": [
+    "webassembly",
+    "wasm",
+    "rust",
+    "webpack"
+  ],
+  "author": "Ashley Williams <ashley666ashley@gmail.com>",
+  "license": "(MIT OR Apache-2.0)",
+  "bugs": {
+    "url": "https://github.com/rustwasm/create-wasm-app/issues"
+  },
+  "homepage": "https://github.com/rustwasm/create-wasm-app#readme",
+  "devDependencies": {
+    "consistent-hash-proof": "file:../pkg/consistent_hash_proof.js",
+    "copy-webpack-plugin": "13.0.1",
+    "raw-loader": "^4.0.2",
+    "webpack": "5.104.1",
+    "webpack-cli": "6.0.1",
+    "webpack-dev-server": "5.2.2"
+  },
+  "dependencies": {
+    "css-loader": "^7.1.2",
+    "deploy": "^1.0.3",
+    "file-loader": "^6.2.0",
+    "github-markdown-css": "^5.8.1",
+    "rehype-katex": "^7.0.1",
+    "rehype-raw": "^7.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "style-loader": "^4.0.0"
+  }
+}

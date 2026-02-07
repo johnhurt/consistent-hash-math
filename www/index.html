@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Consistent Hashing Proofs</title>
+  <style type="text/css">
+    @property --viewport-width {
+      syntax: '<length>';
+      inherits: true;
+      initial-value: 100vw;
+    }
+
+    #markdown-body {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 620px;
+      padding: 2%;
+    }
+
+    .katex-display {
+      font-size: calc(min(var(--viewport-width) * 1em / 600px, 1em))
+    }
+
+    .diagram.small {
+      height: calc(min(var(--viewport-width) * 0.9 * 100 / 600, 100px))
+    }
+
+    .diagram.tall {
+      height: calc(min(var(--viewport-width) * 0.9 * 500 / 600, 500px))
+    }
+
+    .diagram-container {
+      margin-bottom: 20px;
+    }
+
+    .diagram {
+      margin-top: 10px;
+    }
+
+    img {
+      margin: auto;
+      display: block;
+    }
+
+    body {
+      background-color: var(--bgColor-default);
+    }
+  </style>
+</head>
+
+<body>
+  <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+  <div id="initialized" />
+  <article id="markdown-body" class="markdown-body" />
+
+  <script src="./bootstrap.js"></script>
+</body>
+
+</html>
