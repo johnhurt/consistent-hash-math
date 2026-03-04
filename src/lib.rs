@@ -1,3 +1,9 @@
+mod double_hash_demo;
+mod marbles_demo;
+mod packed_hash_demo;
+mod single_hash_demo;
+mod single_hash_pdf_demo;
+mod uniform_distribution_demo;
 mod utils;
 
 use core::str;
@@ -8,17 +14,10 @@ use quill::{
     plot::Plot,
     prelude::{Grid, Interpolation, Legend, Line, Range, Scale},
     series::Series,
-    style::{
-        AxisConfig, GridConfig, LabelConfig, LegendConfig, TickConfig,
-        TitleConfig,
-    },
+    style::{AxisConfig, GridConfig, LabelConfig, TickConfig, TitleConfig},
 };
 use serde::Deserialize;
-use std::{
-    f64::consts::PI,
-    mem::{self, swap},
-    panic,
-};
+use std::{f64::consts::PI, mem, panic};
 use svg::{
     node::element::{
         path::Data, Definitions, Group, Marker, Path, Rectangle, TSpan, Text,
@@ -28,6 +27,8 @@ use svg::{
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::console_log;
 
+use crate::single_hash_demo::SingleHashDemoOpts;
+
 const WIDTH: f64 = 600.;
 const SHORT_HEIGHT: f64 = 100.;
 const TALL_HEIGHT: f64 = 500.;
@@ -35,6 +36,7 @@ const MARGIN: f64 = 20.;
 const FONT_SIZE: f64 = 15.;
 
 pub const BLACK: &str = "#0d1117";
+pub const WHITE: &str = "#ffffff";
 
 pub const GREEN: &str = "#c0ffc0";
 pub const BLUE: &str = "#c0c0ff";
@@ -59,21 +61,6 @@ pub struct App {}
 pub fn new_app() -> App {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     App::default()
-}
-
-#[derive(Debug, Deserialize)]
-struct SingleHashDemoOpts {
-    dark_mode: bool,
-    #[serde(default)]
-    reorient: bool,
-    total_hashes: u32,
-}
-
-#[derive(Debug, Deserialize)]
-struct UniformDistributionOptions {
-    dark_mode: bool,
-    x: f64,
-    total_hashes: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -149,7 +136,7 @@ fn shuffle<T>(v: &mut [T]) {
 }
 
 /// Generate a list of random u32s
-fn generate_random_ints(length: usize) -> Vec<u32> {
+pub fn generate_random_ints(length: usize) -> Vec<u32> {
     let mut bytes = vec![0u8; length * 4];
     getrandom::fill(&mut bytes).unwrap();
 
@@ -505,356 +492,13 @@ impl NumberLineDemo {
     }
 }
 
-impl App {
-    fn uniform_distribution_demo(
-        &self,
-        mut options: UniformDistributionOptions,
-    ) -> String {
-        let demo = NumberLineDemo::new(options.dark_mode);
-
-        let NumberLineDemo {
-            bar_top,
-            bar_height,
-            bar_left,
-            bar_right,
-            bar_width,
-            text_center_y,
-            little_tick_top,
-            little_tick_height,
-            big_tick_top,
-            big_tick_height,
-            // foreground_color,
-            // background_color,
-            ..
-        } = demo.clone();
-
-        let x = options.x / 100.;
-        let x_x = x * bar_width + bar_left;
-
-        let x_text_x = x_x.clamp(bar_left + 10., bar_right - 10.);
-
-        let x_tick = tick(x_x, big_tick_top, big_tick_height);
-        let x_text = text(
-            "x",
-            x_text_x,
-            text_center_y + FONT_SIZE / 2.,
-            options.dark_mode,
-        );
-
-        let x_bar = rectangle(x_x, bar_top, bar_right - x_x, bar_height, GREEN);
-
-        options.total_hashes = 1 << options.total_hashes;
-
-        if options.total_hashes < 1 {
-            options.total_hashes = 1;
-        }
-
-        let hashes = generate_random_floats(options.total_hashes as usize);
-
-        let above_count = hashes.iter().copied().filter(|&v| v > x).count();
-
-        let result = above_count as f64 / options.total_hashes as f64;
-
-        let ticks = hashes
-            .iter()
-            .copied()
-            .map(|v| v * (WIDTH - 2. * MARGIN) + MARGIN)
-            .collect_vec();
-
-        let mut tick_group = Group::new();
-
-        if options.total_hashes < 1000 {
-            for x in &ticks {
-                tick_group = tick_group.add(tick(
-                    *x,
-                    little_tick_top,
-                    little_tick_height,
-                ));
-            }
-        } else {
-            tick_group = tick_group.add(rectangle(
-                bar_left,
-                little_tick_top,
-                bar_width,
-                little_tick_height,
-                "gray",
-            ));
-        }
-
-        let mut text_group = Group::new().set(
-            "transform",
-            format!("translate({},{})", WIDTH / 2., MARGIN / 10.),
-        );
-
-        let small_font = FONT_SIZE * 0.9;
-
-        text_group = text_group.add(
-            text("", 0., 0., options.dark_mode)
-                .set("text-align", "right")
-                .set("font-size", small_font)
-                .set("text-anchor", "end")
-                .add(TSpan::new("1 - x = ").set("x", 0).set("dy", small_font))
-                .add(TSpan::new(format!("{:.1}%", (1. - x) * 100.)))
-                .add(TSpan::new("% > x = ").set("x", 0).set("dy", small_font))
-                .add(TSpan::new(format!("{:0.1}%", result * 100.))),
-        );
-
-        let document = Document::new()
-            .set("viewBox", (0, 0, WIDTH, SHORT_HEIGHT))
-            .add(demo.draw())
-            .add(x_tick)
-            .add(x_bar)
-            .add(x_text)
-            .add(tick_group)
-            .add(text_group);
-
-        let mut e: Vec<u8> = Default::default();
-
-        svg::write(&mut e, &document).expect("Failed to write data");
-
-        String::from_utf8(e).unwrap()
-    }
-
-    fn single_hash_demo(&self, mut options: SingleHashDemoOpts) -> String {
-        let demo = NumberLineDemo::new(options.dark_mode);
-
-        let NumberLineDemo {
-            bar_top,
-            bar_height,
-            little_tick_top,
-            little_tick_height,
-            foreground_color,
-            background_color,
-            ..
-        } = demo.clone();
-
-        let text_width = 100.;
-
-        if options.total_hashes < 2 {
-            options.total_hashes = 2;
-        }
-
-        let mut hashes = (0..options.total_hashes)
-            .map(|_| getrandom::u32().unwrap())
-            .sorted()
-            .map(|v| v as f64 / u32::MAX as f64)
-            .collect_vec();
-
-        if options.reorient {
-            let shift = hashes[0];
-            hashes.iter_mut().for_each(|h| *h -= shift);
-        }
-
-        let ticks = hashes
-            .iter()
-            .copied()
-            .map(|v| v * (WIDTH - 2. * MARGIN) + MARGIN)
-            .collect_vec();
-
-        let mut tick_group = Group::new();
-
-        for x in &ticks {
-            tick_group =
-                tick_group.add(tick(*x, little_tick_top, little_tick_height));
-        }
-
-        let server_index = if options.reorient {
-            0
-        } else {
-            getrandom::u64().unwrap() as usize
-                % (options.total_hashes as usize - 1)
-        };
-
-        let server_left = ticks[server_index];
-        let server_right = ticks[server_index + 1];
-
-        let expected_size = 1.0 / options.total_hashes as f64;
-        let actual_size = hashes[server_index + 1] - hashes[server_index];
-        let error = (actual_size - expected_size) / expected_size;
-
-        let message = if error < 0. {
-            format!("{:.1}% too small", -error * 100.)
-        } else {
-            format!("{:.1}% too big", error * 100.)
-        };
-
-        let server_rect = rectangle(
-            server_left,
-            bar_top,
-            server_right - server_left,
-            bar_height,
-            GREEN,
-        );
-
-        let text_right_x = WIDTH / 2.0;
-        let mut text_group = Group::new().set(
-            "transform",
-            format!("translate({},{})", text_right_x, MARGIN / 2.),
-        );
-
-        text_group = text_group.add(
-            rectangle(
-                -5.,
-                0.,
-                text_width,
-                2. * FONT_SIZE * 0.75 * 1.05,
-                background_color,
-            )
-            .set("stroke", "none"),
-        );
-
-        text_group = text_group.add(
-            text("", 0., 0., options.dark_mode)
-                .set("text-align", "left")
-                .set("font-size", FONT_SIZE * 0.75)
-                .set("text-anchor", "start")
-                .add(
-                    TSpan::new("Our Server")
-                        .set("x", 0)
-                        .set("dy", FONT_SIZE * 0.75),
-                )
-                .add(
-                    TSpan::new(message).set("x", 0).set("dy", FONT_SIZE * 0.75),
-                ),
-        );
-
-        let defs = Definitions::new().add(
-            Marker::new()
-                .set("id", "arrow-head")
-                .set("orient", "auto")
-                .set("markerWidth", 6)
-                .set("markerHeight", 8)
-                .set("refX", 3)
-                .set("refY", 4)
-                .add(
-                    Path::new().set("fill", foreground_color).set(
-                        "d",
-                        Data::new()
-                            .move_to((0, 0))
-                            .vertical_line_by(8)
-                            .line_to((4, 4))
-                            .close(),
-                    ),
-                ),
-        );
-
-        let server_arrow = Path::new()
-            .set("marker-end", "url(#arrow-head)")
-            .set("stroke_width", 1)
-            .set("stroke", foreground_color)
-            .set("fill", "none")
-            .set(
-                "d",
-                Data::new()
-                    .move_to((
-                        text_right_x + text_width / 2.,
-                        MARGIN / 2. + FONT_SIZE * 0.75,
-                    ))
-                    .quadratic_curve_to((
-                        (server_left + server_right) / 2.,
-                        bar_top - 30.,
-                        (server_left + server_right) / 2.,
-                        bar_top - 2.,
-                    )),
-            );
-
-        let document = Document::new()
-            .set("viewBox", (0, 0, WIDTH, SHORT_HEIGHT))
-            .add(defs)
-            .add(demo.draw())
-            .add(tick_group)
-            .add(server_rect)
-            .add(server_arrow)
-            .add(text_group);
-
-        let mut e: Vec<u8> = Default::default();
-
-        svg::write(&mut e, &document).expect("Failed to write data");
-
-        String::from_utf8(e).unwrap()
-    }
-
-    fn single_hash_pdf_demo(
-        &mut self,
-        mut options: SingleHashPdfDemo,
-    ) -> String {
-        options.histogram_bins = 1 << options.histogram_bins;
-        options.total_hashes = options.total_hashes.max(2);
-        options.sample_count = 1 << options.sample_count;
-
-        let n = (1 << options.total_hashes) as f64;
-        let mean = 1. / n;
-        let std_dev = (2. / (n * (n + 1.)) - 1. / n.powi(2)).sqrt();
-
-        let x_max = (mean + std_dev * 6.).min(1.);
-
-        let config = ChConfig {
-            measurement_count: options.sample_count as usize,
-            bins: options.histogram_bins as usize,
-            n: n as usize,
-            k: 1,
-            x_max,
-        };
-
-        let expected = if options.actual_pdf {
-            (0..=config.bins)
-                .map(|i| {
-                    let x = (i as f64 / config.bins as f64) * x_max;
-                    let y = single_segment_pdf(x, config.n);
-                    (x, y)
-                })
-                .map(|(x, y)| (x * 100., y))
-                .collect_vec()
-        } else {
-            calculate_segment_histogram(&config, x_max, single_segment_cdf)
-        };
-
-        let mut y_max =
-            expected.first().copied().unwrap_or((0., 0.0001)).1 * 1.1;
-
-        let histogram_opt =
-            options.run_simulation.then(|| simulate_histogram(&config));
-
-        let actual = histogram_opt.as_ref().map(|histogram| {
-            let actual_max = histogram.max * 100.;
-            if actual_max > y_max {
-                y_max = actual_max * 1.1;
-            }
-
-            histogram
-                .histogram_fractions
-                .iter()
-                .enumerate()
-                .map(|(i, f)| {
-                    (i as f64 / config.bins as f64 * x_max * 100., f * 100.)
-                })
-                .collect_vec()
-        });
-
-        let y_label = if options.actual_pdf {
-            "Single Segment Length - PDF".to_owned()
-        } else {
-            "Histogram Band Probability (%)".to_owned()
-        };
-
-        draw_plot(PlotOptions {
-            title: options.title,
-            dark_mode: options.dark_mode,
-            x_range: (0., x_max * 100.),
-            y_range: (0., y_max),
-            x_label: "Single Segment Length (%)".to_owned(),
-            y_label,
-            step: !options.actual_pdf,
-            data_1: expected,
-            data_2: actual,
-        })
-    }
-}
-
 #[wasm_bindgen]
 pub fn eval_message(app: &mut App, id: String, options: String) -> String {
     match id.as_str() {
         "single-hash-demo" => app.single_hash_demo(
+            serde_json::from_str(&options).expect("Failed to parse options"),
+        ),
+        "double-hash-demo-1" | "double-hash-demo-2" => app.double_hash_demo(
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
         "single-hash-demo-reorient" => {
@@ -872,49 +516,12 @@ pub fn eval_message(app: &mut App, id: String, options: String) -> String {
         | "single-hash-simulation-hist" => app.single_hash_pdf_demo(
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
+        "marble-demo" => app.marbles_demo(
+            serde_json::from_str(&options).expect("Failed to parse options"),
+        ),
+        "packed-hash-demo-1" | "packed-hash-demo-2" => app.packed_hash_demo(
+            serde_json::from_str(&options).expect("Failed to parse options"),
+        ),
         _ => "Unknown id".to_owned(),
-    }
-
-    // let data = Data::new()
-    //     .move_to((1, 1))
-    //     .line_by((98, 0))
-    //     .line_by((0, 8))
-    //     .line_by((-98, 0))
-    //     .close();
-
-    // let path = Path::new()
-    //     .set("fill", "none")
-    //     .set("stroke", "blue")
-    //     .set("stroke-width", 1)
-    //     .set("d", data);
-
-    // let document = Document::new().set("viewBox", (0, 0, 100, 10)).add(path);
-
-    // let mut e: Vec<u8> = Default::default();
-
-    // svg::write(&mut e, &document).expect("Failed to write data");
-
-    // console_log!("done");
-
-    // String::from_utf8(e).unwrap()
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_uniform_dist_demo() {
-        let options = UniformDistributionOptions {
-            x: 20.,
-            total_hashes: 6,
-            dark_mode: false,
-        };
-
-        let a = App {};
-
-        let f = generate_random_floats(1);
-
-        let _ = a.uniform_distribution_demo(options);
     }
 }

@@ -1,0 +1,160 @@
+<svg
+   width="600"
+   height="100"
+   viewBox="0 0 600 100"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+    <rect
+       style="fill:none;stroke:BLACK;stroke-width:1"
+       width="98"
+       height="34"
+       x="75"
+       y="25" />
+    <rect
+       style="fill:none;stroke:BLACK;stroke-width:1"
+       width="98"
+       height="34"
+       x="173"
+       y="25" />
+    <rect
+       style="fill:none;stroke:BLACK;stroke-width:1"
+       width="75"
+       height="34"
+       x="449"
+       y="45" />
+    <rect
+       style="fill:none;stroke:BLACK;stroke-width:1"
+       width="69"
+       height="34"
+       x="524"
+       y="45" />
+    <rect
+       style="fill:none;stroke:BLACK;stroke-width:1"
+       width="98"
+       height="34"
+       x="75"
+       y="59" />
+    <rect
+       style="fill:none;stroke:BLACK;stroke-width:1"
+       width="98"
+       height="34"
+       x="173"
+       y="59" />
+    <text
+       style="font-size:16px;fill:BLACK"
+       x="300"
+       y="45"
+       ><tspan
+         style="fill:BLACK;fill-opacity:1">Same</tspan></text>
+    <text
+       x="277"
+       y="73"
+       ><tspan
+         style="fill:BLACK;fill-opacity:1">Different</tspan></text>
+    <text
+       x="78"
+       y="16"
+       ><tspan
+         style="fill:BLACK;fill-opacity:1">First</tspan></text>
+    <text
+       x="16"
+       y="24"
+       ><tspan
+         style="fill:BLACK;fill-opacity:1">Second</tspan></text>
+   <text
+      x="467"
+      y="36"><tspan
+         style="fill:BLACK;fill-opacity:1">Actual</tspan></text>
+    <text
+       x="530"
+       y="35"
+       ><tspan
+         style="fill:BLACK;fill-opacity:1"
+         >Expected</tspan></text>
+   <text
+      x="410"
+      y="63"
+      ><tspan
+         style="fill:BLACK;fill-opacity:1">Ratio</tspan></text>
+    <circle
+       style="opacity:1;fill:RED;stroke:BLACK;stroke-width:1"
+       cx="125"
+       cy="12"
+       r="8" />
+    <circle
+       style="fill:RED;stroke:BLACK;stroke-width:1"
+       cx="46"
+       cy="42"
+       r="8" />
+    <circle
+       style="fill:GREEN;stroke:BLACK;stroke-width:1"
+       cx="46"
+       cy="76"
+       r="8" />
+    <circle
+       style="fill:GREEN;stroke:BLACK;stroke-width:1"
+       cx="225"
+       cy="12"
+       r="8" />
+   <!--Template Text-->
+   <text
+      x="125"
+      y="48"
+      ><tspan
+         style="fill:BLACK;fill-opacity:1;text-anchor:middle;font-weight:bold">
+         {red_red}
+      </tspan></text>
+   <text
+      x="222"
+      y="48"
+      ><tspan
+         style="fill:BLACK;fill-opacity:1;text-anchor:middle;font-weight:bold">
+         {green_red}
+      </tspan></text>
+      <text
+      x="125"
+      y="80"
+      ><tspan
+         style="fill:BLACK;fill-opacity:1;text-anchor:middle;font-weight:bold">
+         {red_green}
+      </tspan></text>
+   <text
+      x="222"
+      y="80"
+      ><tspan
+         style="fill:BLACK;fill-opacity:1;text-anchor:middle;font-weight:bold">
+         {green_green}
+      </tspan></text>
+
+   <text
+      x="345"
+      y="45"
+      ><tspan
+         style="fill:BLACK;fill-opacity:1;text-anchor:start;font-weight:bold">
+         {same}
+      </tspan></text>
+
+   <text
+      x="345"
+      y="73"
+      ><tspan
+         style="fill:BLACK;fill-opacity:1;text-anchor:start;font-weight:bold">
+         {different}
+      </tspan></text>
+
+   <text
+      x="487"
+      y="67"
+      ><tspan
+         style="fill:BLACK;fill-opacity:1;text-anchor:middle;font-weight:bold">
+         {actual}
+      </tspan></text>
+
+   <text
+      x="559"
+      y="67"
+      ><tspan
+         style="fill:BLACK;fill-opacity:1;text-anchor:middle;font-weight:bold">
+         {expected}
+      </tspan></text>
+</svg>

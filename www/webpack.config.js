@@ -1,6 +1,7 @@
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const path = require('path');
-const { experiments } = require("webpack");
+const PrerendererWebpackPlugin = require('@prerenderer/webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin'); // Import the plugin
 
 module.exports = {
   entry: "./bootstrap.js",
@@ -13,17 +14,20 @@ module.exports = {
     asyncWebAssembly: true
   },
   plugins: [
+    new HtmlWebpackPlugin({
+      template: path.resolve(__dirname, 'index.html'),
+      filename: 'index.html'
+    }),
     new CopyWebpackPlugin({
       patterns: [
-        {
-          from: "index.html",
-          to: "index.html",
-        },
         {
           from: "assets/*",
           to: ".",
         },
       ],
+    }),
+    new PrerendererWebpackPlugin({
+      staticDir: path.join(__dirname, 'dist'),
     })
   ],
   module: {

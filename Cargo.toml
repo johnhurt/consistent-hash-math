@@ -32,6 +32,8 @@ getrandom = { version = "0.3.4", features = ["wasm_js"] }
 ordered-float = "5.1.0"
 num = "0.4.3"
 quill = "0.2.0"
+aho-corasick = "1.1.4"
+compact_str = "0.9.0"
 
 [dev-dependencies]
 

@@ -28,13 +28,13 @@ Which _is_ very close to $ \sqrt{\frac{1}{k}}$ if $N$ is large. In a system wher
 
 ## Part 1 - Single hashes
 
-In order to get to the above equation, we need to start with a simpler entry point. When we use consistent hashing in practice, we operate on integers (normally 32 or 64-bit). This makes computations easier and faster as well as giving us access to well-behaved hash functions, but for our proof it's going to be easier to consider hashes as real numbers between zero and 1 instead of a bounded range of integers.
+In order to get to the above equation, we need to start with a simpler entry point. When we use consistent hashing in practice, we operate on integers (normally 32 or 64-bit). This makes computations easier and faster as well as giving us access to well-behaved hash functions, but for our purposes it's going to be easier to consider hashes as real numbers between zero and 1 instead of a bounded range of integers.
 
 Unfortunately, this does mean that the result I've already stated above is _also_ an approximation (and thus I have [already lied to you](https://x.com/ThePrimeagen/status/1861040630832742795)), but as you will see, this is a good approximation as long as your number of hashes and servers is not _too_ big.
 
 ### Baby Steps
 
-Let's ease our way into this proof and start with something small. Let's say we have a single server with a single hash that's part of a consistent hash setup with at least 1 more server. How do we determine the distribution for the workload that our server will handle? One easy way to think about this is geometrically. Recall from above that we are remapping the integer hash space to real numbers between 0 and 1; in this representation, the fraction of the work handled by our server is the same as length of the segment assigned to it (Assuming the hashes of the tasks have a uniform distribution). Below is an interactive demo showing how the size of the region associated with our server can vary compared to the average size.
+Let's ease our way in and start with something small. Let's say we have a single server with a single hash that's part of a consistent hash setup with at least 1 more server. How do we determine the distribution for the workload that our server will handle? One easy way to think about this is geometrically. Recall from above that we are remapping the integer hash space to real numbers between 0 and 1; in this representation, the fraction of the work handled by our server is the same as length of the segment assigned to it (Assuming the hashes of the tasks have a uniform distribution). Below is an interactive demo showing how the size of the region associated with our server can vary compared to the average size.
 
 <div class="diagram-container" id="single-hash-demo">
     <div>
@@ -375,13 +375,21 @@ Luckily this single-segment derivation was only the tutorial boss for consistent
 
 Deriving the distribution for consistent hashing scenarios with more than one hash per server on its face seems like a complicated and labor intensive problem. I think this is main reason the articles I found on the subject make appeals to [Chebyshev's inequality](https://en.wikipedia.org/wiki/Chebyshev%27s_inequality) to establish an upper bound.
 
-Looking at the literature that's out there (at least what's easy to find by googling) makes it seem like this problem is too difficult to be worth solving directly. Luckily for us, the analytical solution to the multi-segment case is not much more difficult than the single-segment case as long as you are willing to get onboard (with proof) a major simplification, and like I said before, it only takes some high-school level math (by which I mean calculus and statistics).
+Looking at the literature that's out there (at least what's easy to find by googling) makes it seem like this problem is too difficult to be worth solving directly. Luckily for us, the analytical solution to the multi-segment case is not much more difficult than the single-segment case as long as you are willing to get onboard (with a sketch of a proof) a major simplification, and like I said before, it only takes some high-school level math (by which I mean calculus and statistics).
 
 ### What exactly are we doing here?
 
 Recall that in order to determine the percentage of work our server will handle in the single-segment case, we need to find the fraction of the hash output space assigned to our server. When we scaled our output space to fit between zero and one (and pretending it was continuous), all we needed to find was the length of the segment associated with our server. The only thing that changes in the multi-hash case is we need to find the probability distribution for the _sum_ of the length of all the segments associated with our server.
 
-Demo
+<div class="diagram-container" id="double-hash-demo-1">
+    <div>
+        <label for="total_hashes">Total Hashes</label>
+        <input name="total_hashes" type="range" min="2" max="1000" value="20" step = 1 oninput="this.nextElementSibling.value = this.value">
+        <output for="total_hashes">20</output>
+    </div>
+    <button>Rerun</button>
+    <div class="diagram small"></div>
+</div>
 
 Now we can shift our hashes around just like we did before so that the "zero" point falls on one of our servers hashes ... but it's not obvious which hash we should be pick nor is it obvious if that even buys us anything. Even with one hash nestled at the start of the number line, we still have a bunch of messy gaps to deal with. Getting rid of that messiness is going to require taking a step into the unknown. This is going to feel like that _one weird trick_ to calculate your consistent hashing distribution, and I'll admit it doesn't seem like it should be legal. To help get you onboard, we'll condense the essence of our weird trick into one small step so that hopefully the subsequent steps feel logical (if not obvious).
 
@@ -389,13 +397,35 @@ Now we can shift our hashes around just like we did before so that the "zero" po
 
 What if we have just 2 hashes associated with our server? We can choose one of them to be the zero of our number line. The "zero" hash creates a segment $S_1$ that sits nicely at the beginning of the number line, but it leaves one more floating around out there creating a second segment at some random position index $m$ with some random size $S_m$.
 
-Demo
+<div class="diagram-container" id="double-hash-demo-2">
+    <div>
+        <label for="total_hashes">Total Hashes</label>
+        <input name="total_hashes" type="range" min="2" max="1000" value="20" step = 1 oninput="this.nextElementSibling.value = this.value">
+        <output for="total_hashes">20</output>
+        <input name="reorient" type="hidden" value="true"/>
+    </div>
+    <button>Rerun</button>
+    <div class="diagram small"></div>
+</div>
 
 It's tempting to think that we could use the same formula above that we slogged through to describe the distribution for this second segment, and in a way we can. The formula we have is for the distribution for any _single_ segment, so if we were looking our second segment alone without any other information, its length would follow the same distribution we found in the single segment case. Unfortunately if we're considering it by itself, it isn't really "second" anymore.
 
 Considering the both segments at the same time leads us into the world of [conditional probability](https://en.wikipedia.org/wiki/Conditional_probability). It exists to cover the gray area between when you know more than nothing and less than everything about a system. The classic example is removing colored marbles from a bag containing an equal number of red and green marbles. The first marble chosen has an equal chance of being red, but its removal means the second marble is less likely to have the same color as the first simply because there is 1 fewer of that color to choose from.
 
-Demo?
+<div class="diagram-container" id="marble-demo">
+    <div>
+        <label for="color_count">Number of each color</label>
+        <input name="color_count" type="range" min="1" max="100" value="10" oninput="this.nextElementSibling.value = this.value">
+        <output for="color_count">10</output>
+    </div>
+    <div>
+        <label for="trial_count">Trials</label>
+        <input name="trial_count" type="range" min="1" max="10000" value="50" oninput="this.nextElementSibling.value = this.value">
+        <output for="trial_count">50</output>
+    </div>
+    <button>Rerun</button>
+    <div class="diagram small"></div>
+</div>
 
 In general, the relationship between dependent random events (call them $A$ and $B$) is characterized by this equation:
 
@@ -410,7 +440,7 @@ We can see an analog in our 2-segment case in how the length of segment 1 affect
 
 ![Different lengths of wire](assets/wires.webp)
 
-It's more like we have $H$ numbered bags, and each bag has a single wire of a random length where the total length is known. What's important here that there are **no "special" bags**. the probability distribution for the length of the segment in each unopened bag must be the same!
+It's more like we have $H$ numbered bags, and each bag has a single wire of a random length where the total length is known. What's important here that there are **no "special" bags**. We can [exchange](https://en.wikipedia.org/wiki/Exchangeable_random_variables) any one bag for another, so the probability distribution for the length of the segment in each unopened bag must be the same!
 
 ### Avoid empty space
 
@@ -421,12 +451,46 @@ If you'll recall that in the beginning of the previous section we were trying fi
 
 We know from our discussion above that the length of the wire in bag 1 will be distributed like $(H-1)(1-x)^{H-2}$, and that knowing the length of $S_1$ will affect the distribution of $S_m$ (even if we don't know exactly how). But we also know there is nothing special about bag $m$, so the distribution of all the other bags is changed in the same way meaning we could have chosen from any wire from any bag and the resulting distribution would be the same. So how about bag 2? Let's jump back to our original setup and apply what we just learned. Choosing bags 1 and 2 is the equivalent to measuring the 2 left-most segments in our number line.
 
-Demo
+
+<div class="diagram-container" id="packed-hash-demo-1">
+    <div>
+        <label for="total_hashes">Total Hashes</label>
+        <input name="total_hashes" type="range" min="2" max="1000" value="20" step = 1 oninput="this.nextElementSibling.value = this.value">
+        <output for="total_hashes">20</output>
+        <input name="summed_hashes" type="hidden" value="2"/>
+    </div>
+    <button>Rerun</button>
+    <div class="diagram small"></div>
+</div>
 
 _This_ simplifies things considerably because we no longer have a random amount of space in between to account for. We can take this a step further by realizing that this "no special bags" trick works for any number of segments. The distribution for the sum of any $k$ segments is the same as the distribution for the first $k$ consecutive segments.
 
-Demo
-
+<div class="diagram-container" id="packed-hash-demo-2">
+    <div>
+        <label for="total_hashes">Total Hashes</label>
+        <input name="total_hashes" type="range" min="2" max="1000" value="20" step = 1 oninput="this.nextElementSibling.value = this.value">
+        <output for="total_hashes">20</output>
+    </div>
+    <div>
+        <label for="summed_hashes">Summed hashes
+            <span class="katex"><span class="katex-mathml">
+                <math xmlns="http://www.w3.org/1998/Math/MathML"><semantics>
+                    <mrow><mi>(k)</mi></mrow>
+                    <annotation encoding="application/x-tex">(k)</annotation>
+                </semantics></math>
+            </span>
+            <span class="katex-html" aria-hidden="true"><span class="base">
+                <span class="strut" style="height:0.6944em;"></span>
+                <span class="mord mathnormal" style="margin-right:0.03148em;">(k)</span>
+            </span></span>
+        </span>
+        </label>
+        <input name="summed_hashes" type="range" min="2" max="1000" value="10" step = 1 oninput="this.nextElementSibling.value = this.value">
+        <output for="total_hashes">10</output>
+    </div>
+    <button>Rerun</button>
+    <div class="diagram small"></div>
+</div>
 With this fact in hand, we can use almost exactly the same process to get the distribution for the sum of k segments as we did for a single segment.
 
 
