@@ -1,14 +1,14 @@
 # Consistent hashing math
 
-This is a derivation of the formulas that describe the distribution of work in systems using consistent hashing for work sharing share work. It is part technical paper, part demo and part blog post, so there is a lot of math, some web assembly, but also some jokes. My hope is that it will be complete and compelling but also approachable (and interesting?) for any reader regardless of background.
+This is a derivation of the formulas that describe the distribution of work in systems using consistent hashing to share work. It is part technical paper, part demo and part blog post, so there is a lot of math, some web assembly, but also some jokes. My hope is that it will be complete and compelling but also approachable (and interesting?) for any reader regardless of background.
 
 This is a companion piece to [this blog post](todo) I wrote for Cloudflare, so check it out if you want to hear the complete story and how we used the math here to safely reclaim 100+ TB of RAM on the edge. It also has a basic primer on what consistent hashing even is.
 
 ## Motivation
 
-The main reason I'm writing this is to help out anyone in the future who is interested in this subject. When I first starting researching the subject of consistent hashing and how its accuracy is changes based on the number of hashes, I was frustrated by the resources that came up when googling. The results ranged from detailed (but utterly opaque to me) technical papers on the subject or understandable but incomplete derivation from online, computer science class resources.
+The main reason I'm writing this is to help out anyone in the future who is interested in this subject. When I first started researching the subject of consistent hashing and how its accuracy changes based on the number of hashes, I was frustrated by the resources that came up when googling. The results ranged from detailed (but utterly opaque to me) technical papers on the subject or understandable but incomplete derivations from online computer science class resources.
 
-The payoff in both of these cases is an upper bound to the error in how evenly tasks are distributed with consistent hashing given in terms of asymptotic, "Big-O" limits
+The payoff in both of these cases is an upper bound on the error in how evenly tasks are distributed with consistent hashing given in terms of asymptotic, "Big-O" limits
 
 $$
     \mathcal{O}\left( \sqrt{\frac{1}{k}} \right)
@@ -34,7 +34,7 @@ Unfortunately, this does mean that the result I've already stated above is _also
 
 ### Baby Steps
 
-Let's ease our way in and start with something small. Let's say we have a single server with a single hash that's part of a consistent hash setup with at least 1 more server. How do we determine the distribution for the workload that our server will handle? One easy way to think about this is geometrically. Recall from above that we are remapping the integer hash space to real numbers between 0 and 1; in this representation, the fraction of the work handled by our server is the same as length of the segment assigned to it (Assuming the hashes of the tasks have a uniform distribution). Below is an interactive demo showing how the size of the region associated with our server can vary compared to the average size.
+Let's ease our way in and start with something small. Let's say we have a single server with a single hash that's part of a consistent hash setup with at least 1 more server. How do we determine the distribution for the workload that our server will handle? One easy way to think about this is geometrically. Recall from above that we are remapping the integer hash space to real numbers between 0 and 1; in this representation, the fraction of the work handled by our server is the same as the length of the segment assigned to it (Assuming the hashes of the tasks have a uniform distribution). Below is an interactive demo showing how the size of the region associated with our server can vary compared to the average size.
 
 <div class="diagram-container" id="single-hash-demo">
     <div>
@@ -60,7 +60,7 @@ After rerunning a few times you can see that the size of the region associated w
 
 One important thing to notice that I've glossed over so far is that the region between the first and last hash is connected making the hash domain effectively a ✨circle✨. That's why most posts about consistent hashing feature a graphic like the one below showing the angular ranges assigned to each server as a different color.
 
-![blah](assets/Round%20CH.png)
+![A representation of the consistent hash ring as a circle](assets/Round%20CH.png)
 
 Looking at the ranges like this reinforces a fact we have already used. The absolute positions for the hashes for the servers do not matter. It's only their positions relative to each other that affect the distribution. In other words, there are no "special" points in the hash output, so we can choose our "zero" point to be anywhere. Setting zero to be equal to one of the hashes has the nice property that we no longer have to consider circular aspect of the hash ring.
 
@@ -96,7 +96,7 @@ $$
     P \left( L \le x \right) = 1 - P \left( L > x \right)
 $$
 
-This is true because $P \left( L \le x \right)$ and $P \left( L > x \right)$ are ["complementary events"](https://en.wikipedia.org/wiki/Complementary_event) which is just a fancy way of saying that one or the other is always true, but never both. We make this change because $P \left( L > x \right)$ is the the same as probability that all the hashes $\left\{ h_2, h_3, ..., h_H\right\}$ are $\ge x$. Since each hash is [independent](https://en.wikipedia.org/wiki/Independence_(probability_theory)) (meaning the value of one hash doesn't affect any other), we can can say this probability of all being true is the product of all the probability of each being independently true.
+This is true because $P \left( L \le x \right)$ and $P \left( L > x \right)$ are ["complementary events"](https://en.wikipedia.org/wiki/Complementary_event) which is just a fancy way of saying that one or the other is always true, but never both. We make this change because $P \left( L > x \right)$ is the the same as probability that all the hashes $\left\{ h_2, h_3, ..., h_H\right\}$ are $\ge x$. Since each hash is [independent](https://en.wikipedia.org/wiki/Independence_(probability_theory)) (meaning the value of one hash doesn't affect any other), we can say this probability of all being true is the product of the probability of each being independently true.
 
 $$
     \begin{align*}
@@ -108,7 +108,7 @@ $$
     \end{align*}
 $$
 
-Determining the probability that an individual hash is $> x$ is simply $1 - x$. We could probe this by integrating the [PDF](https://en.wikipedia.org/wiki/Probability_density_function) of the uniform distribution, but that's a bit boring (and we'll end up doing that later). Instead, here is another interactive demo that calculates the probability empirically via simulation.
+Determining the probability that an individual hash is $> x$ is simply $1 - x$. We could prove this by integrating the [PDF](https://en.wikipedia.org/wiki/Probability_density_function) of the uniform distribution, but that's a bit boring (and we'll end up doing that later). Instead, here is another interactive demo that calculates the probability empirically via simulation.
 
 <div class="diagram-container" id="uniform-distribution-demo">
     <div>
@@ -172,7 +172,7 @@ Which if we plot, looks like this.
 
 ### Reality vs probability
 
-Let's pause for a second before we use the PDF above calculate the expected value and standard deviation to bring things back to reality. As you might have noticed, the PDF has values _above_ 1. This should be a good clue that the PDF does _not_ give you a way to look up the probability of a specific value ... so then like what good is it? ... and how do you find out the probability of a specific value?
+Let's pause for a second before we use the PDF above to calculate the expected value and standard deviation to bring things back to reality. As you might have noticed, the PDF has values _above_ 1. This should be a good clue that the PDF does _not_ give you a way to look up the probability of a specific value ... so then like what good is it? ... and how do you find out the probability of a specific value?
 
 The answer to both of those questions is **histograms**. As an answer to a purely mathematical problem it's maybe a little unsatisfying. Histogram are exceedingly practical tools that we typically use when measuring or visualizing things in the real world like latency or dB levels. The reason they come up here is because of the simplification we made at the very beginning. Our CDF and PDF above are based on the continuous range between 0 and 1 instead of the discrete length that will actually appear in our hash output. That simplification means that each specific length has infinite precision and therefor an infinitesimal probability by its self. In order to get an appreciable/useful value for probability, we have to look at the probability within a specific range of lengths. Plotting the probability between a bunch of different ranges is essentially the definition of a histogram, and the way we calculate the probability in that range is with the PDF (or CDF).
 
@@ -359,7 +359,7 @@ $$
 
 It's worth pausing here at the end to think about what that standard deviation says in practical terms. Remember that (even if we've strayed into the abstract world a bit) this distribution is about how evenly we are sharing work between servers in the physical world. Standard deviation tells us the distance from the mean for _most_ of the values in our distribution. In a sense it's a prediction of how much more or less load a server will handle than expected.
 
-The drawback for standard deviation is that it's defined in absolute terms. You can see from the formula that the standard deviation goes down as the inverse to the total number of hashes. It would be easy to think that you could make a single-hash consistent hashing system more accurate by adding more total hashes, but that is forgetting that the portion of the range covered by a single segment _also_ decreases as the inverse of the total number of hashes. So at $H=100$ the standard deviation is about $0.99\%$, the expected size of the segment is $1\%$, so the size of error on either size of the expected value is almost equal to the expected size.
+The drawback for standard deviation is that it's defined in absolute terms. You can see from the formula that the standard deviation goes down as the inverse to the total number of hashes. It would be easy to think that you could make a single-hash consistent hashing system more accurate by adding more total hashes, but that is forgetting that the portion of the range covered by a single segment _also_ decreases as the inverse of the total number of hashes. So at $H=100$ the standard deviation is about $0.99\%$, the expected size of the segment is $1\%$, so the size of error on either side of the expected value is almost equal to the expected size.
 
 A more useful analog for error in our consistent hashing systems (and the one I have been using until now without explanation) is [coefficient of variation](https://en.wikipedia.org/wiki/Coefficient_of_variation). CV is simply the standard deviation divided by the expected value or more simply, it's the error margin transformed to match the scale of what we expect. In our case the CV is
 
@@ -373,7 +373,7 @@ Luckily this single-segment derivation was only the tutorial boss for consistent
 
 ## Interlude - Making $k$ hashes solvable
 
-Deriving the distribution for consistent hashing scenarios with more than one hash per server on its face seems like a complicated and labor intensive problem. I think this is main reason the articles I found on the subject make appeals to [Chebyshev's inequality](https://en.wikipedia.org/wiki/Chebyshev%27s_inequality) to establish an upper bound.
+Deriving the distribution for consistent hashing scenarios with more than one hash per server on its face seems like a complicated and labor intensive problem. I think this is the main reason the articles I found on the subject make appeals to [Chebyshev's inequality](https://en.wikipedia.org/wiki/Chebyshev%27s_inequality) to establish an upper bound.
 
 Looking at the literature that's out there (at least what's easy to find by googling) makes it seem like this problem is too difficult to be worth solving directly. Luckily for us, the analytical solution to the multi-segment case is not much more difficult than the single-segment case as long as you are willing to get onboard (with a sketch of a proof) a major simplification, and like I said before, it only takes some high-school level math (by which I mean calculus and statistics).
 
@@ -391,7 +391,7 @@ Recall that in order to determine the percentage of work our server will handle 
     <div class="diagram small"></div>
 </div>
 
-Now we can shift our hashes around just like we did before so that the "zero" point falls on one of our servers hashes ... but it's not obvious which hash we should be pick nor is it obvious if that even buys us anything. Even with one hash nestled at the start of the number line, we still have a bunch of messy gaps to deal with. Getting rid of that messiness is going to require taking a step into the unknown. This is going to feel like that _one weird trick_ to calculate your consistent hashing distribution, and I'll admit it doesn't seem like it should be legal. To help get you onboard, we'll condense the essence of our weird trick into one small step so that hopefully the subsequent steps feel logical (if not obvious).
+Now we can shift our hashes around just like we did before so that the "zero" point falls on one of our servers hashes ... but it's not obvious which hash we should pick, nor is it obvious if that even buys us anything. Even with one hash nestled at the start of the number line, we still have a bunch of messy gaps to deal with. Getting rid of that messiness is going to require taking a step into the unknown. This is going to feel like that _one weird trick_ to calculate your consistent hashing distribution, and I'll admit it doesn't seem like it should be legal. To help get you onboard, we'll condense the essence of our weird trick into one small step so that hopefully the subsequent steps feel logical (if not obvious).
 
 ### Marbles and wires
 
@@ -495,7 +495,7 @@ With this fact in hand, we can use almost exactly the same process to get the di
 
 ## Part 2 - More than a single hash
 
-Depending on your perspective, this is where things either get really interesting or this will feel like déjà vu. Thanks to some logic and (somehow) legit probability shell game, we now know the shape of the problem we need to solve to determine the consistent hashing error for a server with $k$ hashes out of a total of $H$. **What is the distribution for sum of the first $k$ segments on the number line?** We already solved this with $k=1$ by cleverly defining a CDF using a little calculus to get from there to a PDF, variance and then finally to the error. Let's forget about being DRY and repeat ourselves.
+Depending on your perspective, this is where things either get really interesting or this will feel like déjà vu. Thanks to some logic and (somehow) legit probability shell game, we now know the shape of the problem we need to solve to determine the consistent hashing error for a server with $k$ hashes out of a total of $H$. **What is the distribution for sum of the first $k$ segments on the number line?** We already solved this with $k=1$ by cleverly defining a CDF using a little calculus to get from there to a PDF, variance and then finally to the error. Let's forget about being [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) and repeat ourselves.
 
 ### Multi-hash CDF
 
@@ -506,7 +506,7 @@ $$
 
 But in order to write and expression for it, we'll need to do some leg work. Also notice we're bringing ["sigma" notation](https://en.wikipedia.org/wiki/Summation), so now you know things are getting serious.
 
-Recall that we used "[complementary](https://en.wikipedia.org/wiki/Complementary_event)" events to write the CDF for the single-hash case. That was the how we were able to put the probability that the length of the first segment is less than $x$ framed in terms of the probability that all hashes are greater than $x$. This reframing of the problem was important because it put a limit on the location of individual hashes, and each hash has a known uniform and [_independent_](https://en.wikipedia.org/wiki/Independence_(probability_theory)). That same complementary event trick works here, but quite as cleanly. The complementary event for the sum of the first $k$ segments $\le$ $x$ is simply that sum of the first $k$ segments is > $x$.
+Recall that we used "[complementary](https://en.wikipedia.org/wiki/Complementary_event)" events to write the CDF for the single-hash case. That was the how we were able to put the probability that the length of the first segment is less than $x$ framed in terms of the probability that all hashes are greater than $x$. This reframing of the problem was important because it put a limit on the location of individual hashes, and each hash has a known uniform and [_independent_](https://en.wikipedia.org/wiki/Independence_(probability_theory)) distribution. That same complementary event trick works here, but not quite as cleanly. The complementary event for the sum of the first $k$ segments $\le$ $x$ is simply that sum of the first $k$ segments is > $x$.
 
 $$
 \begin{align*}
@@ -515,4 +515,10 @@ $$
 \end{align*}
 $$
 
-That admittedly doesn't seem like a big step forward, but stay with me. For the first $k$ segments to be greater than $x$, it means that the $k$-th smallest hash (not counting the first one which we pinned to zero) must be > $x$. This
+That admittedly doesn't seem like a big step forward, but stay with me. Recall that we can pin the first hash $h_1$ at zero, so we can simplify the expression for the sum of the first $k$ hash segments to just the position of the $k+1$-th smallest hash:
+
+$$
+\sum_{i=1}^{k}{L_i} = h_{k+1}
+$$
+
+ For the first $k$ segments to be greater than $x$, it means that the $k$-th smallest hash (not counting the first one which we pinned to zero) must be > $x$. This
