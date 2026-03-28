@@ -493,5 +493,26 @@ _This_ simplifies things considerably because we no longer have a random amount 
 </div>
 With this fact in hand, we can use almost exactly the same process to get the distribution for the sum of k segments as we did for a single segment.
 
-
 ## Part 2 - More than a single hash
+
+Depending on your perspective, this is where things either get really interesting or this will feel like déjà vu. Thanks to some logic and (somehow) legit probability shell game, we now know the shape of the problem we need to solve to determine the consistent hashing error for a server with $k$ hashes out of a total of $H$. **What is the distribution for sum of the first $k$ segments on the number line?** We already solved this with $k=1$ by cleverly defining a CDF using a little calculus to get from there to a PDF, variance and then finally to the error. Let's forget about being DRY and repeat ourselves.
+
+### Multi-hash CDF
+
+Recall the definition for a CDF is that it tells us that probability that the thing we are looking for is smaller than a value $x$. We'll denote our CDF for $k$ hashes as
+$$
+\text{CDF}_k(x) = P\left(\sum_{i=1}^{k}{L_i} \le x\right)
+$$
+
+But in order to write and expression for it, we'll need to do some leg work. Also notice we're bringing ["sigma" notation](https://en.wikipedia.org/wiki/Summation), so now you know things are getting serious.
+
+Recall that we used "[complementary](https://en.wikipedia.org/wiki/Complementary_event)" events to write the CDF for the single-hash case. That was the how we were able to put the probability that the length of the first segment is less than $x$ framed in terms of the probability that all hashes are greater than $x$. This reframing of the problem was important because it put a limit on the location of individual hashes, and each hash has a known uniform and [_independent_](https://en.wikipedia.org/wiki/Independence_(probability_theory)). That same complementary event trick works here, but quite as cleanly. The complementary event for the sum of the first $k$ segments $\le$ $x$ is simply that sum of the first $k$ segments is > $x$.
+
+$$
+\begin{align*}
+\text{CDF}_k(x) &= P\left(\sum_{i=1}^{k}{L_i} \le x\right) \\
+                &= 1 - P\left(\sum_{i=1}^{k}{L_i} > x\right)
+\end{align*}
+$$
+
+That admittedly doesn't seem like a big step forward, but stay with me. For the first $k$ segments to be greater than $x$, it means that the $k$-th smallest hash (not counting the first one which we pinned to zero) must be > $x$. This
