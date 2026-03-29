@@ -1,4 +1,5 @@
 mod double_hash_demo;
+mod kth_hash_demo;
 mod marbles_demo;
 mod packed_hash_demo;
 mod single_hash_demo;
@@ -64,7 +65,7 @@ pub fn new_app() -> App {
 }
 
 #[derive(Debug, Deserialize)]
-struct SingleHashPdfDemo {
+pub(crate) struct SingleHashPdfDemo {
     dark_mode: bool,
     total_hashes: u32,
 
@@ -520,6 +521,9 @@ pub fn eval_message(app: &mut App, id: String, options: String) -> String {
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
         "packed-hash-demo-1" | "packed-hash-demo-2" => app.packed_hash_demo(
+            serde_json::from_str(&options).expect("Failed to parse options"),
+        ),
+        "kth-hash-demo" => app.kth_hash_demo(
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
         _ => "Unknown id".to_owned(),

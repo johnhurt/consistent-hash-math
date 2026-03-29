@@ -1,7 +1,7 @@
 use crate::*;
 
 impl App {
-    pub fn single_hash_pdf_demo(
+    pub(crate) fn single_hash_pdf_demo(
         &mut self,
         mut options: SingleHashPdfDemo,
     ) -> String {

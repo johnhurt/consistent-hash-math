@@ -81,6 +81,20 @@ function getInputsForDiv(id) {
   return result;
 }
 
+// Update a slider's displayed output value. Used in oninput handlers where
+// a plain `this.nextElementSibling.value = this.value` would be verbose.
+window.updateOutput = function(input) {
+  input.nextElementSibling.value = input.value;
+}
+
+// Keep a dependent slider's value and max clamped to the value of a primary
+// slider. Call from the primary slider's oninput with both elements.
+window.clampDependent = function(primary, dependent) {
+  dependent.max = primary.value;
+  dependent.value = Math.min(+dependent.value, +primary.value);
+  window.updateOutput(dependent);
+}
+
 function isDarkMode() {
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 }

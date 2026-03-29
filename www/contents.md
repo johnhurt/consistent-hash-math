@@ -468,7 +468,7 @@ _This_ simplifies things considerably because we no longer have a random amount 
 <div class="diagram-container" id="packed-hash-demo-2">
     <div>
         <label for="total_hashes">Total Hashes</label>
-        <input name="total_hashes" type="range" min="2" max="1000" value="20" step = 1 oninput="this.nextElementSibling.value = this.value">
+        <input name="total_hashes" type="range" min="2" max="1000" value="20" step = 1 oninput="updateOutput(this); clampDependent(this, this.closest('.diagram-container').querySelector('[name=summed_hashes]'))">
         <output for="total_hashes">20</output>
     </div>
     <div>
@@ -485,7 +485,7 @@ _This_ simplifies things considerably because we no longer have a random amount 
             </span></span>
         </span>
         </label>
-        <input name="summed_hashes" type="range" min="2" max="1000" value="10" step = 1 oninput="this.nextElementSibling.value = this.value">
+        <input name="summed_hashes" type="range" min="1" max="20" value="10" step = 1 oninput="updateOutput(this)">
         <output for="total_hashes">10</output>
     </div>
     <button>Rerun</button>
@@ -520,5 +520,35 @@ That admittedly doesn't seem like a big step forward, but stay with me. Recall t
 $$
 \sum_{i=1}^{k}{L_i} = h_{k+1}
 $$
+
+<div class="diagram-container" id="kth-hash-demo">
+    <div>
+        <label for="total_hashes">Total Hashes</label>
+        <input name="total_hashes" type="range" min="1" max="100" value="20" step=1
+               oninput="updateOutput(this); clampDependent(this, this.closest('.diagram-container').querySelector('[name=summed_hashes]'))">
+        <output for="total_hashes">20</output>
+    </div>
+    <div>
+        <label for="summed_hashes">Summed Hashes
+            <span class="katex"><span class="katex-mathml">
+                <math xmlns="http://www.w3.org/1998/Math/MathML"><semantics>
+                    <mrow><mi>(k)</mi></mrow>
+                    <annotation encoding="application/x-tex">(k)</annotation>
+                </semantics></math>
+            </span>
+            <span class="katex-html" aria-hidden="true"><span class="base">
+                <span class="strut" style="height:0.6944em;"></span>
+                <span class="mord mathnormal" style="margin-right:0.03148em;">(k)</span>
+            </span></span>
+        </span>
+        </label>
+        <input name="summed_hashes" type="range" min="0" max="20" value="3" step=1
+               oninput="updateOutput(this)">
+        <output for="summed_hashes">3</output>
+    </div>
+    <button>Rerun</button>
+    <div class="diagram small"></div>
+</div>
+
 
  For the first $k$ segments to be greater than $x$, it means that the $k$-th smallest hash (not counting the first one which we pinned to zero) must be > $x$. This
