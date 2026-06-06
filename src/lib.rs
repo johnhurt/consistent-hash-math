@@ -1,3 +1,4 @@
+mod bernoulli_demo;
 mod double_hash_demo;
 mod kth_hash_demo;
 mod marbles_demo;
@@ -524,6 +525,9 @@ pub fn eval_message(app: &mut App, id: String, options: String) -> String {
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
         "kth-hash-demo" => app.kth_hash_demo(
+            serde_json::from_str(&options).expect("Failed to parse options"),
+        ),
+        "bernoulli-demo" => app.bernoulli_demo(
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
         _ => "Unknown id".to_owned(),

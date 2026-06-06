@@ -112,7 +112,7 @@ Determining the probability that an individual hash is $> x$ is simply $1 - x$. 
 
 <div class="diagram-container" id="uniform-distribution-demo">
     <div>
-        <label for="x">X</label>
+        <label for="x"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span></label>
         <input name="x" type="range" min="0" max="100" value="20" oninput="this.nextElementSibling.value = this.value / 100">
         <output for="x">0.2</output>
     </div>
@@ -550,5 +550,216 @@ $$
     <div class="diagram small"></div>
 </div>
 
+We can use this to rewrite the CDF for the sum of k segments as
 
- For the first $k$ segments to be greater than $x$, it means that the $k$-th smallest hash (not counting the first one which we pinned to zero) must be > $x$. This
+$$
+\text{CDF}_k(x) = 1-P \left( h_{k+1} >x\right)
+$$
+
+While this insight doesn't give use a directly useable set of independent probabilities, it does allow us to simplify our length measuring problem in one of counting. Because if the $k+1$-th smallest hash is $> x$, then it means the total number of hashes less than $x$ must be less than $k+1$. Since we have pinned $h_1$ at 0, we can go a little further and say the the number of unpinned hashes (the only hashes that actually matter in our distribution) must be less than $k$.
+
+Let's introduce some new notation for this idea of counting the number of hashes that are $ \le x $. For a set of $H$ random hashes, we'll let $C(x)$ be the count of hashes that are $<x$. Or if we want we wanted to be cool, we could write this as
+
+$$
+C(x) \colonequals \left| \left\{ h \in H :: h<x \right\} \right|
+$$
+
+But, in practical terms we can just think of $C$ as being like the sql [`count`](https://www.w3schools.com/sql/sql_count.asp) function. We can rewrite our CDF (yes, _again_) in terms of $C$
+
+$$
+\text{CDF}_k(x) = 1-P \left( C(x) < k \right)
+$$
+
+This is a HUGE step forward because unlike $x$ or the values of $h_i$, $k$ and the values of $C(x)$ are _integers_. If we consider the specific case where $k=3$, and we want to know the probability that the count of hashes no greater than $x$ is less than $k$, we can literally check all possible values for a count less than $k$ and add them up!
+
+$$
+\begin{align*}
+\text{CDF}_k(x)  = 1- [&P \left( C(x) = 0 \right) \\
+    + &P \left( C(x) = 1 \right) \\
+    + &P \left( C(x) = 2 \right)]
+\end{align*}
+$$
+Summing is safe here because there's no intersection between the events (the count can't be 1 and 2 at the same time). In general terms we can rewrite our CDF as.
+
+$$
+\begin{align*}
+\text{CDF}_k(x) &= 1-P \left( C(x) < k \right) \\
+    &= 1 - \sum_{i=0}^{k-1}{P \left( C(x) = i \right)}
+\end{align*}
+$$
+
+Okay, so we have successfully kicked the can multiple steps down the road. The last step is to find a real formula for $P \left( C(x) = i \right)$, and for that we're going to need to call up a new friend, [Bernoulli](https://en.wikipedia.org/wiki/Jacob_Bernoulli).
+
+### Trials and family
+
+Bernoulli is a big name in mathematics and physics, but that's at least partially because there are _two_ Bernoullis. [Johann](https://en.wikipedia.org/wiki/Johann_Bernoulli) and [Jacob]((https://en.wikipedia.org/wiki/Jacob_Bernoulli)) were brothers and the sons of an apothecary. In addition to saddling them with a cutesy naming scheme, their father was a bit pushy. He pushed one towards a practical career in the spice trade, and the other into a respectable life as a theologian. Somehow they both ended up as famous mathematicians with works heavily geared towards gambling strategies. Jacob (for some reason 😉) wanted to know the "expected winnings for various games of chance" particularly in those with allowing multiple independent rounds and uniform odds of winning. The term [Bernoulli trial](https://en.wikipedia.org/wiki/Bernoulli_trial) comes directly from this research (though the name came literally hundreds of years after the work was published).
+
+Cool story, bro, but how does this help us with consistent hashing?
+
+So while the Bernoullis' motivations may not have been purely academic, the concept of Bernoulli trials is directly applicable to any situation with repeated tests where the outcomes are binary (yes/no) and the probability of yes is always the same. This could be a series of coin flips, dice rolls, or even 3-point shots (for a very consistent player). We can construct our own trial based on individual hash values. We'll consider a hash a "winner" if it less than $x$.
+
+<div class="diagram-container" id="bernoulli-demo">
+    <div>
+        <label for="x"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span></label>
+        <input name="x" type="range" min="0" max="100" value="20" oninput="this.nextElementSibling.value = this.value / 100">
+        <output for="x">0.2</output>
+    </div>
+    <div>
+        <label for="total_hashes">Total Hashes</label>
+        <input name="total_hashes" type="range" min="0" max="16" value="6" oninput="this.nextElementSibling.value = 1 << this.value">
+        <output for="total_hashes">64</output>
+    </div>
+    <button>Rerun</button>
+    <div class="diagram small"></div>
+</div>
+
+With this framing of our problem, Bernoulli gives us exactly the formula we are looking for. The probability for getting any specific number of "wins" $k$ out of a total number of trials $n$ where the probability of a "win" is a constant $p$ is given by the binomial distribution which looks like this
+
+$$
+P(\text{wins }=k) = \binom{n}{k}p^{k}(1-p)^{n-k}
+$$
+
+In our case we have $H$ total hashes, but effectively only $H=1$ are independent trials because we are forcing one of them to zero. A "win" for us is a hash less than $x$, so the probability of a win is just $x$. We can now write the probability of getting exactly $i$ wins as
+
+$$
+\boxed{
+    P(C(x)=i) = \binom{H-1}{i}x^{i}(1-x)^{H-1-i}
+}
+$$
+
+This is the last piece of our puzzle that we need to start working out the CDF of our distribution, but it’s worth looking at this formula gifted to us from on high to demystify it a little. Let’s ignore the weird thing in the front for now (Spoiler, this thing _is_ the binomial, so it is going to be important) and just look at the powers.
+
+### Order and choices
+
+Let's look at the general binomial distribution again.
+
+$$
+P(\text{wins }=k) = \binom{n}{k}p^{k}(1-p)^{n-k}
+$$
+
+Since $p$ here is the probability of winning, we've seen enough complementary events ro recognize $1-p$ is a probability of losing. Raising a probability to a power should make your spidey sense tingle. We saw earlier that combining the probability of multiple independent events is done by multiplying them together to get the joint probability, so we can think of this product of powers $p^k(1-p)^{n-k}$ as the probability of winning exactly $k$ times (duh?) and losing $n-k$ times. I don't know about you, but to me that sounds like it should be enough, right? $k$ wins after trying $k + (n-k)=n$ times? That's all the times! If that quantity already encapsulates the thing we want, why do we need the $\binom{n}{k}$?
+
+Even if you haven't seen this equation before, the purpose behind this coefficient is probably something you already understand at an intuitive level. Let me ask you this? If I flip a fair coin 2 times, what's more likely, 2 heads, 2 tails or a head and a tail? You know in your gut that getting a mix of heads and tails is more likely, but if we compute our partial formula: $p^k(1-p)^{n-k}$
+
+$$
+\begin{align*}
+P(\text{2 heads}) &= {P_H}^2{P_T}^0 = \left(\frac{1}{2}\right)^2\cdot1&=\frac{1}{4} \\
+P(\text{2 tails}) &= {P_H}^0{P_T}^2 = 1\cdot\left(\frac{1}{2}\right)^2&=\frac{1}{4} \\
+P(\text{1 head, 1 tail}) &= {P_H}^1{P_T}^1 = \left(\frac{1}{2}\right)\left(\frac{1}{2}\right)&=\frac{1}{4}
+\end{align*}
+$$
+
+We see that they are the same (and don't add to 1 which is kind of a red flag). The problem is our partial formula and its perfect [commutativity](https://en.wikipedia.org/wiki/Commutative_property) is that it hides the fact that __order matters__.
+
+I'll admit I was being a little obtuse in my statement of the events above. The probability of 1 head 1 tail $P(\text{1 head, 1 tail})$ is only $\frac{1}{4}$ if we consider it to be a different event than $P(\text{1 tail, 1 head})$. In Bernoulli trials (and specifically our consistent hashing case), we are concerned with the total number of each event rather than the order that they happen. In order to know the probability of one total heads and one total tails, we need to add up the probability for all the ways that can happen. Easy for 1 head and 1 tail.
+
+$$
+\begin{align*}
+P(\text{Unordered \{1 heads, 1 tails}\}) &= P(\text{1 head, 1 tail}) + P(\text{1 tail, 1 head}) \\
+&= \frac{1}{4} + \frac{1}{4} \\
+&= \frac{1}{2} \\
+\end{align*}
+$$
+
+Which means getting a mix of heads and tails is twice as likely as getting 2 heads and matches our interaction.
+
+We can formalize this a little better by noting that it's no coincidence that $P(\text{1 head, 1 tail}) = P(\text{1 tail, 1 head})$. Any specific order $hthtth...$ of $H$ heads and $T$ tails is going to have the same probability because the probability of the specific ordering is one big commutable product.
+
+$$
+\begin{align*}
+P(\text{Ordered \{}hthtth...\text{\}}) &=
+P_H \cdot P_T \cdot P_H \cdot P_T \cdot P_T \cdot P_H ...\\
+&= (P_H)^H \cdot (P_T)^T
+\end{align*}
+$$
+
+So we can generalize our formula for unordered probability for a certain number of heads and tails to
+
+$$
+P(\text {Unordered\{H heads, T tails\}}) = \underline{M(H, T)} \cdot P(\text{Ordered\{H, T\}})
+$$
+
+Where $M(H,T)$ is the number of unique ways $H$ heads and $T$ tails can be ordered. Let's bring this back full circle by considering a flip of heads as a "win" and applying these identities.
+
+$$
+N \colonequals H + T \\
+P_T = 1 - P_H
+$$
+
+We get this expression
+
+$$
+\begin{align*}
+P(\text{wins = }H) &= P(\text {Unordered\{H heads, T tails\}}) \\
+&= M(H,T) \cdot P(\text{Ordered\{H, T\}}) \\
+&= M(H,T) \cdot (P_H)^H \cdot (P_T)^T \\
+&= \underline{ M(H,N-H) }\cdot (P_H)^H \cdot (1-P_H)^{N-H}
+\end{align*}
+$$
+
+And if we compare that back to the original binomial formula
+
+$$
+P(\text{wins }=k) = \underline{\binom{n}{k}}\cdot p^{k}(1-p)^{n-k}
+$$
+
+We see that the binomial coefficient $\binom{n}{k}$ corresponds directly with our order-counting function $M$. This tells us that $\binom{N}{H}$ is simply the number of ways we can order $H$ wins out of $N$ total attempts. Or thought of another way, the number of ways you could _choose_ $H$ attempts from all $N$ to be winners. This is why when professionals (like me 😉) have to say the name of this coefficient aloud, we say don't say "N choose K" which is much less of a mouthful than "The binomial coefficient of N with K"
+
+The value for the coefficient is honestly less interesting than what it means, but I'll put it here anyway.
+
+$$
+\binom{n}{k} = \frac{n!}{k!(n-k)!}
+$$
+
+There's no end to the interesting things you can do with it or derive it, but I'll leave that as homework for you ... so I hope you like [triangles](https://en.wikipedia.org/wiki/Pascal%27s_triangle#Binomial_expansions)
+
+### Arithmetic crank
+
+Alright. At this point, we have everything we need to get to answer our question, so let's hit the gas on our arithmetic and make it happen before we get distracted again. We just got to the point where we had a formula for the probability of a specific count of of hashes less than x
+
+$$P(C(x)=i) = \binom{H}{i}x^{i}(1-p)^{H-i}$$
+
+Now we can fill that into the CDF formula
+
+$$
+\begin{align*}
+\text{CDF}_k(x) &= 1 - \sum_{i=0}^{k-1}{P \left( C(x) = i \right)} \\
+&= \boxed{1-\sum_{i=0}^{k-1}{\binom{H-1}{i}x^{i}(1-x)^{H-1-i}}}
+\end{align*}
+$$
+
+Let's sanity check since we already went through a long derivation for $k=1$. It should equal $1 - \left(1 - x\right)^{H - 1}$
+
+$$
+\begin{align*}
+\text{CDF}_{k=1}(x) &= 1 - \sum_{i=0}^{0}{P \left( C(x) = i \right)} \\
+&= 1-\binom{H-1}{0}x^{0}(1-x)^{H-1-0} \\
+&= 1-\frac{(H-1)!}{0!(H-1-0)!}(1-x)^{H-1} \\
+&= 1-\frac{(H-1)!}{(H-1)!}(1-x)^{H-1} \\
+&= 1 - \left(1 - x\right)^{H - 1} \text{ }\text{ }\text{  ✅}
+\end{align*}
+$$
+
+Looks good, so let's keep moving. We have our CDF, we just need to turn the cranks to get the PDF, expected value, standard deviation, and finally so let's tackle them one at a time.
+
+#### PDF
+
+Just like before, we'll apply the definition of the PDF directly.
+
+$$
+\begin{align*}
+\text{PDF}_k
+    &= \frac{d}{dx}\text{CDF}_k\left( x \right) \\
+    &= \frac{d}{dx}\left(1 - \sum_{i=0}^{k-1}{\binom{H-1}{i}x^{i}(1-x)^{H-1-i}}\right)
+\end{align*}
+$$
+
+I can feel you trying to space out because they expression is a little gnarly. Lots of symbols with numbers and letters everywhere. Don't worry, we'll get through this part quick and then we'll have a demo. And I'll sprinkle some memes in just to break it up.
+
+![Statistics](assets/simba.jpg)
+
+
+
+
+### The last chapter
+

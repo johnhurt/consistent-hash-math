@@ -1,7 +1,8 @@
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const path = require('path');
 const PrerendererWebpackPlugin = require('@prerenderer/webpack-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin'); // Import the plugin
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   entry: "./bootstrap.js",
@@ -17,6 +18,9 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, 'index.html'),
       filename: 'index.html'
+    }),
+    new MiniCssExtractPlugin({
+      filename: "styles.css",
     }),
     new CopyWebpackPlugin({
       patterns: [
@@ -35,7 +39,7 @@ module.exports = {
       { test: /\.md$/, use: 'raw-loader' },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader'], // style-loader comes first (last in the array)
+        use: [MiniCssExtractPlugin.loader, 'css-loader'],
       }
     ]
   },

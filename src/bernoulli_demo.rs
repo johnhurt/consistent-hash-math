@@ -1,17 +1,14 @@
 use crate::*;
 
 #[derive(Debug, Deserialize)]
-pub struct UniformDistributionOptions {
+pub struct BernoulliDemoOptions {
     dark_mode: bool,
     x: f64,
     total_hashes: u32,
 }
 
 impl App {
-    pub fn uniform_distribution_demo(
-        &self,
-        mut options: UniformDistributionOptions,
-    ) -> String {
+    pub fn bernoulli_demo(&self, mut options: BernoulliDemoOptions) -> String {
         let demo = NumberLineDemo::new(options.dark_mode);
 
         let NumberLineDemo {
@@ -25,14 +22,11 @@ impl App {
             little_tick_height,
             big_tick_top,
             big_tick_height,
-            // foreground_color,
-            // background_color,
             ..
         } = demo.clone();
 
         let x = options.x / 100.;
         let x_x = x * bar_width + bar_left;
-
         let x_text_x = x_x.clamp(bar_left + 10., bar_right - 10.);
 
         let x_tick = tick(x_x, big_tick_top, big_tick_height);
@@ -43,7 +37,11 @@ impl App {
             options.dark_mode,
         );
 
-        let x_bar = rectangle(x_x, bar_top, bar_right - x_x, bar_height, GREEN);
+        // Winners (< x) are green on the left, losers (>= x) are red on the right
+        let win_bar =
+            rectangle(bar_left, bar_top, x_x - bar_left, bar_height, GREEN);
+        let lose_bar =
+            rectangle(x_x, bar_top, bar_right - x_x, bar_height, RED);
 
         options.total_hashes = 1 << options.total_hashes;
 
@@ -53,9 +51,9 @@ impl App {
 
         let hashes = generate_random_floats(options.total_hashes as usize);
 
-        let above_count = hashes.iter().copied().filter(|&v| v > x).count();
-
-        let result = above_count as f64 / options.total_hashes as f64;
+        let winner_count = hashes.iter().copied().filter(|&v| v < x).count();
+        let total = options.total_hashes as usize;
+        let actual_pct = winner_count as f64 / total as f64 * 100.;
 
         let ticks = hashes
             .iter()
@@ -95,47 +93,33 @@ impl App {
                 .set("text-align", "right")
                 .set("font-size", small_font)
                 .set("text-anchor", "end")
-                .add(TSpan::new("1 - x = ").set("x", 0).set("dy", small_font))
-                .add(TSpan::new(format!("{:.1}%", (1. - x) * 100.)))
-                .add(TSpan::new("% > x = ").set("x", 0).set("dy", small_font))
-                .add(TSpan::new(format!("{:0.1}%", result * 100.))),
-        );
-
-        let small_font = FONT_SIZE * 0.9;
-        let math_x = || {
-            TSpan::new("x")
-                .set("font-family", "KaTeX_Math")
-                .set("font-style", "italic")
-        };
-
-        text_group = text_group.add(
-            text("", 0., 0., options.dark_mode)
-                .set("text-align", "right")
-                .set("font-size", small_font)
-                .set("text-anchor", "end")
                 .add(
-                    TSpan::new("1 \u{2212} ").set("x", 0).set("dy", small_font),
+                    TSpan::new(format!(
+                        "Winners: {} / {} \u{2248} {:.1}%",
+                        winner_count, total, actual_pct
+                    ))
+                    .set("x", 0)
+                    .set("dy", small_font),
                 )
-                .add(math_x())
-                .add(TSpan::new(format!(" = {:.1}%", (1. - x) * 100.)))
-                .add(TSpan::new("% > ").set("x", 0).set("dy", small_font))
-                .add(math_x())
-                .add(TSpan::new(format!(" = {:0.1}%", result * 100.))),
+                .add(
+                    TSpan::new(format!("Expected: {:.1}%", x * 100.))
+                        .set("x", 0)
+                        .set("dy", small_font),
+                ),
         );
 
         let document = Document::new()
             .set("viewBox", (0, 0, WIDTH, SHORT_HEIGHT))
             .add(demo.draw())
+            .add(win_bar)
+            .add(lose_bar)
             .add(x_tick)
-            .add(x_bar)
             .add(x_text)
             .add(tick_group)
             .add(text_group);
 
         let mut e: Vec<u8> = Default::default();
-
         svg::write(&mut e, &document).expect("Failed to write data");
-
         String::from_utf8(e).unwrap()
     }
 }

@@ -32,6 +32,7 @@
     "consistent-hash-proof": "file:../pkg/consistent_hash_proof.js",
     "copy-webpack-plugin": "13.0.1",
     "html-webpack-plugin": "^5.6.6",
+    "mini-css-extract-plugin": "^2.10.2",
     "raw-loader": "^4.0.2",
     "webpack": "5.104.1",
     "webpack-cli": "6.0.1",
