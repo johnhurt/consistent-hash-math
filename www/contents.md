@@ -26,6 +26,8 @@ $$
 
 Which _is_ very close to $ \sqrt{\frac{1}{k}}$ if $N$ is large. In a system where the number of servers is 50 or more, the difference between the actual error value and the approximation is ~1%. It's a useful approximation, but without seeing what went into it, it's impossible to see what its other implications are. For instance, how do things change if each server has a _different_ number of hashes? We will answer that question and more, so now let's prove it!
 
+![Computer Science is Math](assets/math-cs.webp)
+
 ## Part 1 - Single hashes
 
 In order to get to the above equation, we need to start with a simpler entry point. When we use consistent hashing in practice, we operate on integers (normally 32 or 64-bit). This makes computations easier and faster as well as giving us access to well-behaved hash functions, but for our purposes it's going to be easier to consider hashes as real numbers between zero and 1 instead of a bounded range of integers.
@@ -244,7 +246,16 @@ $$
     \end{align*}
 $$
 
-We can use [integration by parts](https://en.wikipedia.org/wiki/Integration_by_parts) to evaluate this, so define $u$ and $v$ to be
+To evaluate that we'll need to use one of the secret dark arts of calculus:  [integration by parts](https://en.wikipedia.org/wiki/Integration_by_parts). It looks confusing...
+
+![What is it](assets/elvish%202.jpg)
+$$
+   \large{ \int u\cdot dv = u\cdot v - \int{v\cdot du} }
+$$
+
+![Some kind of Elvish](assets/elvish.jpg)
+
+... and it feels illegal, but it's really just the chain rule in reverse. First we need to define our $u$ and $dv$
 
 $$
     \begin{align*}
@@ -376,6 +387,8 @@ Luckily this single-segment derivation was only the tutorial boss for consistent
 Deriving the distribution for consistent hashing scenarios with more than one hash per server on its face seems like a complicated and labor intensive problem. I think this is the main reason the articles I found on the subject make appeals to [Chebyshev's inequality](https://en.wikipedia.org/wiki/Chebyshev%27s_inequality) to establish an upper bound.
 
 Looking at the literature that's out there (at least what's easy to find by googling) makes it seem like this problem is too difficult to be worth solving directly. Luckily for us, the analytical solution to the multi-segment case is not much more difficult than the single-segment case as long as you are willing to get onboard (with a sketch of a proof) a major simplification, and like I said before, it only takes some high-school level math (by which I mean calculus and statistics).
+
+![Statistics](assets/simba.jpg)
 
 ### What exactly are we doing here?
 
@@ -715,6 +728,8 @@ There's no end to the interesting things you can do with it or derive it, but I'
 
 ### Arithmetic crank
 
+![Boring](assets/boring.webp)
+
 Alright. At this point, we have everything we need to get to answer our question, so let's hit the gas on our arithmetic and make it happen before we get distracted again. We just got to the point where we had a formula for the probability of a specific count of of hashes less than x
 
 $$P(C(x)=i) = \binom{H}{i}x^{i}(1-p)^{H-i}$$
@@ -748,18 +763,103 @@ Just like before, we'll apply the definition of the PDF directly.
 
 $$
 \begin{align*}
-\text{PDF}_k
+\text{PDF}_k(x)
     &= \frac{d}{dx}\text{CDF}_k\left( x \right) \\
     &= \frac{d}{dx}\left(1 - \sum_{i=0}^{k-1}{\binom{H-1}{i}x^{i}(1-x)^{H-1-i}}\right)
 \end{align*}
 $$
 
-I can feel you trying to space out because they expression is a little gnarly. Lots of symbols with numbers and letters everywhere. Don't worry, we'll get through this part quick and then we'll have a demo. And I'll sprinkle some memes in just to break it up.
+I can feel you trying to space out because they expression is a little gnarly. Lots of symbols with numbers and letters everywhere. Stick with me anyway though, this is where we get one of the most satisfying tricks in math.
 
-![Statistics](assets/simba.jpg)
+![Cute math](assets/cute.png)
 
+Let's keep turning the crank. We start with a little distribution and product rule.
 
+$$
+\begin{align*}
+\text{PDF}_k(x)
+&= \frac{d}{dx}\left(1 - \sum_{i=0}^{k-1}{\binom{H-1}{i}x^{i}(1-x)^{H-1-i}}\right) \\
+&= 0-\sum_{i=0}^{k-1}\binom{H-1}{i}\frac{d}{dx}x^{i}(1-x)^{H-1-i} \\
+&=- \sum_{i=0}^{k-1}\binom{H-1}{i}\left(ix^{i-1}(1-x)^{H-1-i}-(H-1-i)x^{i}(1-x)^{H-2-i}\right)
 
+\end{align*}
+$$
+
+Here's where we get cute. Let's first reduce the strain on our eyes by introducing 2 functions $A_i(x)$ and $B_i(x)$.
+
+$$
+\begin{align*}
+A_i(x) &\colonequals -\binom{H-1}{i}ix^{i-1}(1-x)^{H-1-i} \\
+B_i(x) &\colonequals \binom{H-1}{i}(H-1-i)x^{i}(1-x)^{H-2-i}
+\end{align*}
+$$
+
+Now we can rewrite our full, complicated PDF as
+
+$$
+\text{PDF}_k(x) = \sum_{i=0}^{k-1}A_i(x) + B_i(x)
+$$
+
+But notice there are some strong similarities between our two new helper functions. Those similarities become even more pronounced if we look at $A_{i+1}$.
+
+$$
+\begin{align*}
+B_i(x)= \binom{H-1}{i}(H-1-i)\cdot \underline{x^{i}(1-x)^{H-2-i}} \\
+A_{i+1}(x)= -\binom{H-1}{i+1}(i+1) \cdot \underline{x^{i}(1-x)^{H-2-i}}
+\end{align*}
+$$
+
+We can even rewrite $B_{i}$ in terms of $A_{i+1}$ as
+
+$$
+\begin{align*}
+B_i(x) &= \frac{-\binom{H-1}{i}(H-1-i)}{\binom{H-1}{i+1}(i+1)} A_{i+1}(x) \\
+&=\frac{-(H-1)!(H-1-i)(i+1)!(H-2-i)!}{(H-1)!(i+1)i!(H-1-i)!}A_{i+1}(x)
+\end{align*}
+$$
+
+That's a bit of a jumble, but we can cut through the noise by using the simple identity $N!=N\cdot(N-1)!$ for any $N$ to show that,
+
+$$
+\begin{align*}
+B_i(x) &= \frac{-(H-1)!(H-1-i)(i+1)!(H-2-i)!}{(H-1)!(i+1)i!(H-1-i)!}A_{i+1}(x) \\
+&=-\frac{(H-1)!}{(H-1)!}\cdot\frac{(H-1-i)!}{(H-1-i)!}\cdot\frac{(i+1)!}{(i+1)!}A_{i+1}(x) \\
+&=\underline{\underline{-A_{i+1}(x)}}
+\end{align*}
+$$
+
+Which is surprising and 🌈 magical 🌈 because it means we can reduce even our simplified PDF!
+
+$$
+\begin{align*}
+\text{PDF}_k(x)
+    &= \sum_{i=0}^{k-1}A_i(x) + B_i(x) \\
+    &= \sum_{i=0}^{k-1}A_i(x) -A_{i+1}(x) \\
+    &= A_{0}(x) - \underline{A_{1}(x) + A_{1}(x)} - \underline{A_{2}(x) +A_{2}(x)} \dots \underline{-A_{k-1} + A_{k-1}} - A_{k}\\
+\end{align*}
+$$
+
+All of the interior pairs in the sum will cancel out, and we will be left with only the first and last terms, so $\text{PDF}_k(x) = A_0(x)-A_k(x)$, and since $A_0(k)$ is trivially zero, our final formula for the PDF is.
+
+$$
+\begin{align*}
+    \text{PDF}_k(x) &= A_0(x)-A_k(x) \\
+    &= 0 - \left[-\binom{H-1}{k}kx^{k-1}(1-x)^{H-1-k}\right] \\
+    &= \boxed{\binom{H-1}{k}kx^{k-1}(1-x)^{H-1-k}}
+\end{align*}
+$$
+
+Which is far prettier than I expected, and let's us continue to turn the crank to get towards our final error measurement. We can also use our same trick to visualize this distribution alongside a simulation to prove that our math is mathing.
+
+#### Expected Value
+
+This is the easiest value to calculate, so I'm not going to belabor things. We can intuitively guess that the expected value for $x$ is going to be. Just as a refresher (since maybe it took a while to get here after starting at the beginning 😝) $x$ here is the total length of $k$ random hash segments out of a total of $H$. We already know that the expected value for the length of a single segment is $1/H$, so it's not much of a stretch to assume that length of $k$ segments added together would be $k/H$. Let's go through the motions to see if our intuition is correct
+
+$$
+\begin{align*}
+
+\end{align*}
+$$
 
 ### The last chapter
 
