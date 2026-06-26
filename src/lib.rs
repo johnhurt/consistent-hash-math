@@ -1,5 +1,6 @@
 mod bernoulli_demo;
 mod double_hash_demo;
+mod k_hash_pdf_demo;
 mod kth_hash_demo;
 mod marbles_demo;
 mod packed_hash_demo;
@@ -27,7 +28,6 @@ use svg::{
     Document,
 };
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_test::console_log;
 
 use crate::single_hash_demo::SingleHashDemoOpts;
 
@@ -42,6 +42,35 @@ pub const WHITE: &str = "#ffffff";
 
 pub const GREEN: &str = "#c0ffc0";
 pub const BLUE: &str = "#c0c0ff";
+
+#[cfg(target_arch = "wasm32")]
+fn now_ms() -> f64 {
+    js_sys::Date::now()
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn now_ms() -> f64 {
+    0.0
+}
+
+#[cfg(target_arch = "wasm32")]
+fn log_profile(total: f64, gen_ms: f64, sum_ms: f64) {
+    if total <= 0.0 {
+        return;
+    }
+    let msg = format!(
+        "simulate_histogram: total={:.1}ms, gen={:.1}%, sum={:.1}%, other={:.1}%",
+        total,
+        gen_ms / total * 100.0,
+        sum_ms / total * 100.0,
+        (total - gen_ms - sum_ms) / total * 100.0
+    );
+    web_sys::console::log_1(&msg.into());
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn log_profile(_total: f64, _gen_ms: f64, _sum_ms: f64) {}
+
 pub const RED: &str = "#ffc0c0";
 
 #[wasm_bindgen]
@@ -82,17 +111,18 @@ pub(crate) struct SingleHashPdfDemo {
     run_simulation: bool,
 }
 
-struct ChConfig {
+pub(crate) struct ChConfig {
     n: usize,
     k: usize,
 
     measurement_count: usize,
     bins: usize,
+    x_min: f64,
     x_max: f64,
 }
 
 #[derive(Debug)]
-struct HistogramOutput {
+pub(crate) struct HistogramOutput {
     histogram_fractions: Vec<f64>,
     samples: f64,
     mean: f64,
@@ -127,21 +157,8 @@ fn text(text: &str, x: f64, y: f64, dark_mode: bool) -> Text {
         .set("alignment-baseline", "middle")
 }
 
-/// Shuffle the values in the given array
-fn shuffle<T>(v: &mut [T]) {
-    generate_random_ints(v.len())
-        .into_iter()
-        .enumerate()
-        .sorted_by_key(|(_, k)| *k)
-        .enumerate()
-        .for_each(|(i, (j, _))| v.swap(i, j));
-}
-
 /// Generate a list of random u32s
 pub fn generate_random_ints(length: usize) -> Vec<u32> {
-    let mut bytes = vec![0u8; length * 4];
-    getrandom::fill(&mut bytes).unwrap();
-
     let mut bytes = vec![0u8; length * 4];
     getrandom::fill(&mut bytes).unwrap();
 
@@ -156,7 +173,7 @@ pub fn generate_random_ints(length: usize) -> Vec<u32> {
 }
 
 /// Generate a sorted array of the given number random floats between 0 and 1
-fn generate_random_floats(length: usize) -> Vec<f64> {
+pub(crate) fn generate_random_floats(length: usize) -> Vec<f64> {
     let ints = generate_random_ints(length);
     ints.into_iter()
         .sorted()
@@ -164,20 +181,69 @@ fn generate_random_floats(length: usize) -> Vec<f64> {
         .collect_vec()
 }
 
-/// Perform the base layer of the experiment by generating a bunch of hashes
-/// (random numbers) and returning a list of all the sizes of all the segments
-fn generate_segments(count: usize) -> Vec<ordered_float::OrderedFloat<f64>> {
-    generate_random_floats(count)
-        .into_iter()
-        .circular_tuple_windows::<(_, _)>()
-        .map(|(left, mut right)| {
-            if left > right {
-                right += 1.0
-            }
+/// Batched generator that produces one ring's worth of segments at a time.
+///
+/// Instead of calling `getrandom` for every run, it fills a ~1 MB buffer of
+/// random u32s once and then sorts slices of that buffer into segment rings
+/// until the buffer is exhausted.
+struct SegmentGenerator {
+    n: usize,
+    batch: Vec<u32>,
+    floats: Vec<f64>,
+    segments: Vec<OrderedFloat<f64>>,
+    used: usize,
+}
 
-            OrderedFloat::from(right - left)
-        })
-        .collect()
+impl SegmentGenerator {
+    fn new(n: usize) -> Self {
+        let per_run = n.saturating_sub(1).max(1);
+        let target_bytes = 1_000_000;
+        let batch_runs = (target_bytes / (per_run * 4)).max(1);
+        let batch = vec![0; batch_runs * per_run];
+
+        Self {
+            n,
+            batch,
+            floats: Vec::with_capacity(per_run + 1),
+            segments: Vec::with_capacity(n),
+            used: batch_runs * per_run,
+        }
+    }
+
+    fn next(&mut self) -> &[OrderedFloat<f64>] {
+        let per_run = self.n.saturating_sub(1).max(1);
+
+        if self.used.saturating_add(per_run) > self.batch.len() {
+            let bytes = unsafe {
+                std::slice::from_raw_parts_mut(
+                    self.batch.as_mut_ptr() as *mut u8,
+                    self.batch.len() * 4,
+                )
+            };
+            getrandom::fill(bytes).unwrap();
+            self.used = 0;
+        }
+
+        self.floats.clear();
+        self.floats.extend(
+            self.batch[self.used..self.used + per_run]
+                .iter()
+                .map(|&v| v as f64 / u32::MAX as f64),
+        );
+        self.floats.push(0.0);
+        self.floats.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+        self.segments.clear();
+        for window in self.floats.windows(2) {
+            self.segments
+                .push(OrderedFloat::from(window[1] - window[0]));
+        }
+        let wrap = (1.0 + self.floats[0]) - self.floats[self.floats.len() - 1];
+        self.segments.push(OrderedFloat::from(wrap));
+
+        self.used += per_run;
+        &self.segments
+    }
 }
 
 fn sum_k_segments(
@@ -186,47 +252,65 @@ fn sum_k_segments(
 ) -> Vec<OrderedFloat<f64>> {
     segments
         .iter()
-        .take(segments.len() / k)
+        .take((segments.len() / k) * k)
         .chunks(k)
         .into_iter()
         .map(|chunk| chunk.into_iter().sum())
         .collect()
 }
 
-fn simulate_histogram(config: &ChConfig) -> HistogramOutput {
+pub(crate) fn simulate_histogram(config: &ChConfig) -> HistogramOutput {
     let bins = config.bins;
-    let mut histogram = vec![0_u32; bins];
+    let min = config.x_min;
     let max = config.x_max;
-    let mut samples = 0;
+    let width = max - min;
     let mean = config.k as f64 / config.n as f64;
 
+    let mut histogram = vec![0_u32; bins];
+    let mut samples = 0;
     let mut sum = 0.;
     let mut running_variance = 0.;
 
+    let start = now_ms();
+    let mut gen_ms = 0.0;
+    let mut sum_ms = 0.0;
+    let mut generator = SegmentGenerator::new(config.n);
+
     while samples < config.measurement_count {
-        let mut new_segments = generate_segments(config.n);
+        let needed = config.measurement_count - samples;
 
-        // Shuffle the segment lengths to
-        shuffle(&mut new_segments);
+        let t0 = now_ms();
+        let new_segments = generator.next();
+        let t1 = now_ms();
+        gen_ms += t1 - t0;
 
-        let segment_sums = sum_k_segments(&new_segments, config.k);
+        let segment_sums = sum_k_segments(new_segments, config.k);
+        let t2 = now_ms();
+        sum_ms += t2 - t1;
 
-        for &segment_sum in &segment_sums {
+        for &segment_sum in
+            segment_sums.iter().take(needed.min(segment_sums.len()))
+        {
             sum += segment_sum.0;
             running_variance += (segment_sum.0 - mean).powi(2);
-            let index = (segment_sum.0 / max * bins as f64) as usize;
 
-            if let Some(v) = histogram.get_mut(index) {
-                *v += 1;
+            let raw_index = if width > 0.0 {
+                (segment_sum.0 - min) / width * bins as f64
+            } else {
+                bins as f64 - 1.0
+            };
+
+            if raw_index >= 0.0 {
+                let index = (raw_index.min(bins as f64 - 1.0)) as usize;
+                histogram[index] += 1;
             }
 
             samples += 1;
-
-            if samples >= config.measurement_count {
-                break;
-            }
         }
     }
+    let total_ms = now_ms() - start;
+    log_profile(total_ms, gen_ms, sum_ms);
+
     let samples = samples as f64;
 
     let max =
@@ -250,12 +334,9 @@ fn simulate_histogram(config: &ChConfig) -> HistogramOutput {
 /// binomial(n - 1, k - 1) * (n - k) * (1-x)^(n - k - 1) * x^(k - 1)
 ///
 /// This approximation uses the stirling approximation for factorials
-///
-fn k_segment_pdf_approx(at: f64, n: usize, k: usize) -> f64 {
+pub(crate) fn k_segment_pdf_approx(at: f64, n: usize, k: usize) -> f64 {
     let n = n as f64;
     let k = k as f64;
-
-    console_log!("at: {at}, n: {n}, k: {k}");
 
     // Terms 1-3 are the stirling approximation applied to the
     // binomial coefficient of (n - 1, k - 1)
@@ -277,21 +358,23 @@ fn single_segment_pdf(at: f64, n: usize) -> f64 {
     (n as f64 - 1.) * (1. - at).powi(n as i32 - 2)
 }
 
-fn single_segment_cdf(at: f64, n: usize) -> f64 {
+pub(crate) fn single_segment_cdf(at: f64, n: usize) -> f64 {
     1. - (1. - at).powi(n as i32 - 1)
 }
 
-fn calculate_segment_histogram<F: FnMut(f64, usize) -> f64>(
+pub(crate) fn calculate_segment_histogram<F: FnMut(f64, usize) -> f64>(
     config: &ChConfig,
-    max: f64,
     mut cdf: F,
 ) -> Vec<(f64, f64)> {
+    let width = config.x_max - config.x_min;
     (0..=config.bins)
         .chain(Some(config.bins))
         .tuple_windows::<(_, _)>()
         .map(|(left_i, right_i)| {
-            let left = left_i as f64 / config.bins as f64 * max;
-            let right = right_i as f64 / config.bins as f64 * max;
+            let t_left = left_i as f64 / config.bins as f64;
+            let t_right = right_i as f64 / config.bins as f64;
+            let left = config.x_min + t_left * width;
+            let right = config.x_min + t_right * width;
 
             let left_v = cdf(left, config.n);
             let right_v = cdf(right, config.n);
@@ -528,6 +611,9 @@ pub fn eval_message(app: &mut App, id: String, options: String) -> String {
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
         "bernoulli-demo" => app.bernoulli_demo(
+            serde_json::from_str(&options).expect("Failed to parse options"),
+        ),
+        "k-hash-pdf-demo" => app.k_hash_pdf_demo(
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
         _ => "Unknown id".to_owned(),

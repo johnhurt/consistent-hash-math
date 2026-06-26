@@ -851,6 +851,36 @@ $$
 
 Which is far prettier than I expected, and let's us continue to turn the crank to get towards our final error measurement. We can also use our same trick to visualize this distribution alongside a simulation to prove that our math is mathing.
 
+
+The demo below shows the histogram predicted by the k-hash PDF next to a simulation of the same setup.
+
+<div class="diagram-container" id="k-hash-pdf-demo">
+    <div>
+        <label for="total_hashes">Total Hashes</label>
+        <input name="total_hashes" type="range" min="2" max="1000" value="20" step="1" oninput="updateOutput(this); clampDependent(this, this.closest('.diagram-container').querySelector('[name=summed_hashes]'))">
+        <output for="total_hashes">20</output>
+    </div>
+    <div>
+        <label for="summed_hashes">Hashes per Server (k)</label>
+        <input name="summed_hashes" type="range" min="1" max="1000" value="3" step="1" oninput="updateOutput(this)">
+        <output for="summed_hashes">3</output>
+    </div>
+    <div>
+        <label for="histogram_bins">Histogram Bins</label>
+        <input name="histogram_bins" type="range" min="1" max="10" value="4" oninput="this.nextElementSibling.value = 1 << this.value">
+        <output for="histogram_bins">16</output>
+    </div>
+    <div>
+        <label for="sample_count">Sample Count</label>
+        <input name="sample_count" type="range" min="1" max="16" value="10" oninput="this.nextElementSibling.value = 1 << this.value">
+        <output for="sample_count">1024</output>
+    </div>
+    <input type="hidden" name="title" value="k-Hash Sum - Reality vs Theory">
+    <input type="hidden" name="run_simulation" value="true">
+    <button>Rerun</button>
+    <div class="diagram tall"></div>
+</div>
+
 #### Expected Value
 
 This is the easiest value to calculate, so I'm not going to belabor things. We can intuitively guess that the expected value for $x$ is going to be. Just as a refresher (since maybe it took a while to get here after starting at the beginning 😝) $x$ here is the total length of $k$ random hash segments out of a total of $H$. We already know that the expected value for the length of a single segment is $1/H$, so it's not much of a stretch to assume that length of $k$ segments added together would be $k/H$. Let's go through the motions to see if our intuition is correct

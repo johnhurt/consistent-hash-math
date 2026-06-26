@@ -20,6 +20,7 @@ impl App {
             bins: options.histogram_bins as usize,
             n: n as usize,
             k: 1,
+            x_min: 0.0,
             x_max,
         };
 
@@ -33,7 +34,7 @@ impl App {
                 .map(|(x, y)| (x * 100., y))
                 .collect_vec()
         } else {
-            calculate_segment_histogram(&config, x_max, single_segment_cdf)
+            calculate_segment_histogram(&config, single_segment_cdf)
         };
 
         let mut y_max =
