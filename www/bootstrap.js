@@ -153,18 +153,18 @@ function initialize() {
     if (b) {
       b.addEventListener("click", () => rerunDiagram(id));
 
-      let spinner = document.createElement("span");
-      spinner.id = id + "-spinner";
-      spinner.className = "diagram-spinner";
-      spinner.setAttribute("aria-hidden", "true");
-      b.parentNode.insertBefore(spinner, b.nextSibling);
-
       let link = document.createElement("a");
       link.href = "#" + id;
       link.className = "diagram-anchor";
       link.textContent = "#";
       link.setAttribute("aria-label", "Link to this chart");
-      b.parentNode.insertBefore(link, spinner.nextSibling);
+      b.parentNode.insertBefore(link, b);
+
+      let spinner = document.createElement("span");
+      spinner.id = id + "-spinner";
+      spinner.className = "diagram-spinner";
+      spinner.setAttribute("aria-hidden", "true");
+      b.parentNode.insertBefore(spinner, b.nextSibling);
     }
 
     let inputs = d.getElementsByTagName("input");
