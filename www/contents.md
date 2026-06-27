@@ -854,7 +854,7 @@ Which is far prettier than I expected, and let's us continue to turn the crank t
 
 The demo below shows the histogram predicted by the k-hash PDF next to a simulation of the same setup.
 
-<div class="diagram-container" id="k-hash-pdf-demo">
+<div class="diagram-container" id="k-hash-pdf">
     <div>
         <label for="total_hashes">Total Hashes</label>
         <input name="total_hashes" type="range" min="2" max="1000" value="20" step="1" oninput="updateOutput(this); clampDependent(this, this.closest('.diagram-container').querySelector('[name=summed_hashes]'))">

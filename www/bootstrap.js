@@ -1,5 +1,7 @@
 import rehypeKatex from 'rehype-katex'
 import html from 'rehype-stringify'
+import rehypeSlug from 'rehype-slug'
+import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import remarkMath from 'remark-math'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
@@ -16,10 +18,29 @@ const file = await unified()
   .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeKatex)
   .use(rehypeRaw)
+  .use(rehypeSlug)
+  .use(rehypeAutolinkHeadings, {
+    behavior: 'append',
+    content: { type: 'text', value: ' #' },
+    properties: { className: ['anchor'] }
+  })
   .use(html)
   .process(markdownContents);
 
 document.getElementById('markdown-body').innerHTML = file.value;
+
+function scrollToHash() {
+  const hash = window.location.hash;
+  if (hash) {
+    const target = document.getElementById(hash.slice(1));
+    if (target) {
+      target.scrollIntoView({ block: 'start' });
+    }
+  }
+}
+
+scrollToHash();
+window.addEventListener('hashchange', scrollToHash);
 
 let worker;
 let workerReady = false;
