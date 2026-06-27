@@ -92,13 +92,28 @@
       margin-left: 0.3em;
       padding-right: 0;
       text-decoration: none;
-      opacity: 0.4;
+      opacity: 0;
+      transition: opacity 0.1s ease-in-out;
       font-size: inherit;
       font-weight: inherit;
       vertical-align: baseline;
     }
 
-    #markdown-body .anchor:hover {
+    #markdown-body h1:hover .anchor,
+    #markdown-body h2:hover .anchor,
+    #markdown-body h3:hover .anchor,
+    #markdown-body h4:hover .anchor,
+    #markdown-body h5:hover .anchor,
+    #markdown-body h6:hover .anchor {
+      opacity: 0.4;
+    }
+
+    #markdown-body h1:hover .anchor:hover,
+    #markdown-body h2:hover .anchor:hover,
+    #markdown-body h3:hover .anchor:hover,
+    #markdown-body h4:hover .anchor:hover,
+    #markdown-body h5:hover .anchor:hover,
+    #markdown-body h6:hover .anchor:hover {
       opacity: 1;
     }
   </style>
