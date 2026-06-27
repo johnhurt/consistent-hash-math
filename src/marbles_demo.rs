@@ -88,6 +88,7 @@ impl RedGreen {
 }
 
 /// Why am I having to write this?
+#[allow(dead_code)]
 fn parse_doc_into<'l>(curr: &mut Element, parser: &mut Parser<'l>) {
     while let Some(e) = parser.next() {
         match e {
@@ -117,6 +118,7 @@ fn render_svg(replacements: Replacements) -> String {
     REPLACER.replace_all(TEMPLATE, &replacements.into_vec())
 }
 
+#[allow(dead_code)]
 fn template_svg(dark_mode: bool) -> Document {
     let fg_color = if dark_mode { WHITE } else { BLACK };
     let template_svg = TEMPLATE
@@ -133,8 +135,6 @@ fn template_svg(dark_mode: bool) -> Document {
     result.get_attributes_mut().extend(attrs);
 
     parse_doc_into(&mut result, &mut parser);
-
-    dbg!(&result);
 
     result
 }

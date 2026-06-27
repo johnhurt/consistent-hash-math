@@ -43,34 +43,6 @@ pub const WHITE: &str = "#ffffff";
 pub const GREEN: &str = "#c0ffc0";
 pub const BLUE: &str = "#c0c0ff";
 
-#[cfg(target_arch = "wasm32")]
-fn now_ms() -> f64 {
-    js_sys::Date::now()
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn now_ms() -> f64 {
-    0.0
-}
-
-#[cfg(target_arch = "wasm32")]
-fn log_profile(total: f64, gen_ms: f64, sum_ms: f64) {
-    if total <= 0.0 {
-        return;
-    }
-    let msg = format!(
-        "simulate_histogram: total={:.1}ms, gen={:.1}%, sum={:.1}%, other={:.1}%",
-        total,
-        gen_ms / total * 100.0,
-        sum_ms / total * 100.0,
-        (total - gen_ms - sum_ms) / total * 100.0
-    );
-    web_sys::console::log_1(&msg.into());
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn log_profile(_total: f64, _gen_ms: f64, _sum_ms: f64) {}
-
 pub const RED: &str = "#ffc0c0";
 
 #[wasm_bindgen]
@@ -122,6 +94,7 @@ pub(crate) struct ChConfig {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct HistogramOutput {
     histogram_fractions: Vec<f64>,
     samples: f64,
@@ -271,22 +244,13 @@ pub(crate) fn simulate_histogram(config: &ChConfig) -> HistogramOutput {
     let mut sum = 0.;
     let mut running_variance = 0.;
 
-    let start = now_ms();
-    let mut gen_ms = 0.0;
-    let mut sum_ms = 0.0;
     let mut generator = SegmentGenerator::new(config.n);
 
     while samples < config.measurement_count {
         let needed = config.measurement_count - samples;
 
-        let t0 = now_ms();
         let new_segments = generator.next();
-        let t1 = now_ms();
-        gen_ms += t1 - t0;
-
         let segment_sums = sum_k_segments(new_segments, config.k);
-        let t2 = now_ms();
-        sum_ms += t2 - t1;
 
         for &segment_sum in
             segment_sums.iter().take(needed.min(segment_sums.len()))
@@ -308,8 +272,6 @@ pub(crate) fn simulate_histogram(config: &ChConfig) -> HistogramOutput {
             samples += 1;
         }
     }
-    let total_ms = now_ms() - start;
-    log_profile(total_ms, gen_ms, sum_ms);
 
     let samples = samples as f64;
 
@@ -388,7 +350,6 @@ pub(crate) fn calculate_segment_histogram<F: FnMut(f64, usize) -> f64>(
 
 #[derive(Debug, Clone)]
 struct NumberLineDemo {
-    bar_bottom: f64,
     bar_top: f64,
     bar_height: f64,
 
@@ -539,7 +500,6 @@ impl NumberLineDemo {
         };
 
         NumberLineDemo {
-            bar_bottom,
             bar_top,
             bar_height,
 

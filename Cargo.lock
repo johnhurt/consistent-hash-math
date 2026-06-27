@@ -113,7 +113,6 @@ dependencies = [
  "eyre",
  "getrandom",
  "itertools",
- "js-sys",
  "num",
  "once_cell",
  "ordered-float",

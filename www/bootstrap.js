@@ -23,21 +23,41 @@ document.getElementById('markdown-body').innerHTML = file.value;
 
 let worker;
 let workerReady = false;
+let pendingDiagrams = 0;
+
+function showSpinner() {
+  pendingDiagrams++;
+  const spinner = document.getElementById("spinner");
+  if (spinner) {
+    spinner.classList.add("active");
+  }
+}
+
+function hideSpinner() {
+  pendingDiagrams = Math.max(0, pendingDiagrams - 1);
+  if (pendingDiagrams === 0) {
+    const spinner = document.getElementById("spinner");
+    if (spinner) {
+      spinner.classList.remove("active");
+    }
+  }
+}
 
 if (window.Worker) {
   worker = new Worker(new URL("./worker.js", import.meta.url));
 
   worker.onmessage = (r) => {
     const [id, contents] = r.data;
-    const e = document.getElementById(id + "-diagram");
 
     if (id == "initialized") {
       workerReady = true;
       return;
     }
 
+    hideSpinner();
+
+    const e = document.getElementById(id + "-diagram");
     if (!e) {
-      console.error("Unknown element id", id);
       return;
     }
 
@@ -50,7 +70,6 @@ function getInputsForDiv(id) {
   let result = {};
 
   if (!d) {
-    console.error("No div for: ", id)
     return;
   }
 
@@ -102,6 +121,7 @@ function isDarkMode() {
 function rerunDiagram(id) {
   let inputs = getInputsForDiv(id);
   inputs.dark_mode = isDarkMode();
+  showSpinner();
   worker.postMessage([id, JSON.stringify(inputs)])
 }
 
@@ -146,7 +166,6 @@ function run_first_diagram_load_with_retry() {
     return;
   }
   setTimeout(() => {
-    console.log("retrying");
     run_first_diagram_load_with_retry();
   }, 10);
 }

@@ -1,10 +1,8 @@
-use std::u32;
-
 use crate::*;
 
 fn ordinal(n: usize) -> String {
     let suffix = match n % 100 {
-        11 | 12 | 13 => "th",
+        11..=13 => "th",
         _ => match n % 10 {
             1 => "st",
             2 => "nd",

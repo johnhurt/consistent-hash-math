@@ -50,11 +50,44 @@
     body {
       background-color: var(--bgColor-default);
     }
+
+    #spinner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(128, 128, 128, 0.2);
+      z-index: 1000;
+    }
+
+    #spinner.active {
+      display: flex;
+    }
+
+    .spinner-circle {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(128, 128, 128, 0.3);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spinner-spin 1s linear infinite;
+    }
+
+    @keyframes spinner-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
 
 <body>
   <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+  <div id="spinner" aria-hidden="true"><div class="spinner-circle"></div></div>
   <div id="initialized" />
   <article id="markdown-body" class="markdown-body" />
 
