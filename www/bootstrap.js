@@ -23,23 +23,17 @@ document.getElementById('markdown-body').innerHTML = file.value;
 
 let worker;
 let workerReady = false;
-let pendingDiagrams = 0;
 
-function showSpinner() {
-  pendingDiagrams++;
-  const spinner = document.getElementById("spinner");
-  if (spinner) {
-    spinner.classList.add("active");
+function setDiagramSpinner(id, active) {
+  const spinner = document.getElementById(id + "-spinner");
+  if (!spinner) {
+    return;
   }
-}
 
-function hideSpinner() {
-  pendingDiagrams = Math.max(0, pendingDiagrams - 1);
-  if (pendingDiagrams === 0) {
-    const spinner = document.getElementById("spinner");
-    if (spinner) {
-      spinner.classList.remove("active");
-    }
+  if (active) {
+    spinner.classList.add("active");
+  } else {
+    spinner.classList.remove("active");
   }
 }
 
@@ -54,7 +48,7 @@ if (window.Worker) {
       return;
     }
 
-    hideSpinner();
+    setDiagramSpinner(id, false);
 
     const e = document.getElementById(id + "-diagram");
     if (!e) {
@@ -121,7 +115,7 @@ function isDarkMode() {
 function rerunDiagram(id) {
   let inputs = getInputsForDiv(id);
   inputs.dark_mode = isDarkMode();
-  showSpinner();
+  setDiagramSpinner(id, true);
   worker.postMessage([id, JSON.stringify(inputs)])
 }
 
@@ -137,6 +131,12 @@ function initialize() {
 
     if (b) {
       b.addEventListener("click", () => rerunDiagram(id));
+
+      let spinner = document.createElement("span");
+      spinner.id = id + "-spinner";
+      spinner.className = "diagram-spinner";
+      spinner.setAttribute("aria-hidden", "true");
+      b.parentNode.insertBefore(spinner, b.nextSibling);
     }
 
     let inputs = d.getElementsByTagName("input");
