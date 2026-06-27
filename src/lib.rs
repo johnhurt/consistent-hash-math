@@ -573,7 +573,7 @@ pub fn eval_message(app: &mut App, id: String, options: String) -> String {
         "bernoulli-demo" => app.bernoulli_demo(
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
-        "k-hash-pdf-demo" => app.k_hash_pdf_demo(
+        "k-hash-pdf" => app.k_hash_pdf_demo(
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
         _ => "Unknown id".to_owned(),
