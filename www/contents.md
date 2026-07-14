@@ -114,7 +114,7 @@ Determining the probability that an individual hash is $> x$ is simply $1 - x$. 
 
 <div class="diagram-container" id="uniform-distribution-demo">
     <div>
-        <label for="x"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span></label>
+        <label for="x">x</label>
         <input name="x" type="range" min="0" max="100" value="20" oninput="this.nextElementSibling.value = this.value / 100">
         <output for="x">0.2</output>
     </div>
@@ -485,19 +485,7 @@ _This_ simplifies things considerably because we no longer have a random amount 
         <output for="total_hashes">20</output>
     </div>
     <div>
-        <label for="summed_hashes">Summed hashes
-            <span class="katex"><span class="katex-mathml">
-                <math xmlns="http://www.w3.org/1998/Math/MathML"><semantics>
-                    <mrow><mi>(k)</mi></mrow>
-                    <annotation encoding="application/x-tex">(k)</annotation>
-                </semantics></math>
-            </span>
-            <span class="katex-html" aria-hidden="true"><span class="base">
-                <span class="strut" style="height:0.6944em;"></span>
-                <span class="mord mathnormal" style="margin-right:0.03148em;">(k)</span>
-            </span></span>
-        </span>
-        </label>
+        <label for="summed_hashes">Summed hashes (k)</label>
         <input name="summed_hashes" type="range" min="1" max="20" value="10" step = 1 oninput="updateOutput(this)">
         <output for="total_hashes">10</output>
     </div>
@@ -542,19 +530,7 @@ $$
         <output for="total_hashes">20</output>
     </div>
     <div>
-        <label for="summed_hashes">Summed Hashes
-            <span class="katex"><span class="katex-mathml">
-                <math xmlns="http://www.w3.org/1998/Math/MathML"><semantics>
-                    <mrow><mi>(k)</mi></mrow>
-                    <annotation encoding="application/x-tex">(k)</annotation>
-                </semantics></math>
-            </span>
-            <span class="katex-html" aria-hidden="true"><span class="base">
-                <span class="strut" style="height:0.6944em;"></span>
-                <span class="mord mathnormal" style="margin-right:0.03148em;">(k)</span>
-            </span></span>
-        </span>
-        </label>
+        <label for="summed_hashes">Summed Hashes (k)</label>
         <input name="summed_hashes" type="range" min="0" max="20" value="3" step=1
                oninput="updateOutput(this)">
         <output for="summed_hashes">3</output>
@@ -613,7 +589,7 @@ So while the Bernoullis' motivations may not have been purely academic, the conc
 
 <div class="diagram-container" id="bernoulli-demo">
     <div>
-        <label for="x"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span></label>
+        <label for="x">x</label>
         <input name="x" type="range" min="0" max="100" value="20" oninput="this.nextElementSibling.value = this.value / 100">
         <output for="x">0.2</output>
     </div>
