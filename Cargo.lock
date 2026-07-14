@@ -120,6 +120,7 @@ dependencies = [
  "quill",
  "serde",
  "serde_json",
+ "svg 0.13.1",
  "svg 0.18.0",
  "wasm-bindgen",
  "wasm-bindgen-test",

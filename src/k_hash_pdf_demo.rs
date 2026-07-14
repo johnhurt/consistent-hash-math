@@ -11,6 +11,18 @@ pub struct KHashPdfDemo {
 
     #[serde(default)]
     run_simulation: bool,
+
+    #[serde(default)]
+    show_simulated_mean: bool,
+
+    #[serde(default)]
+    show_simulated_std_dev: bool,
+
+    #[serde(default)]
+    show_calculated_mean: bool,
+
+    #[serde(default)]
+    show_calculated_std_dev: bool,
 }
 
 /// Build a histogram from the k-segment PDF approximation by integrating each
@@ -107,10 +119,27 @@ impl App {
             options.run_simulation.then(|| simulate_histogram(&config));
 
         let width = x_max - x_min;
+        let mut vertical_bands = Vec::new();
+
         let actual = histogram_opt.as_ref().map(|histogram| {
             let actual_max = histogram.max * 100.0;
             if actual_max > y_max {
                 y_max = actual_max * 1.1;
+            }
+
+            if options.show_simulated_mean || options.show_simulated_std_dev {
+                let mean = histogram.mean * 100.0;
+                let lower =
+                    (histogram.mean - histogram.std_dev).max(0.0) * 100.0;
+                let upper = (histogram.mean + histogram.std_dev) * 100.0;
+
+                let band = VerticalBand::new(lower, mean, upper, BLUE_LIGHT)
+                    .with_edge_dash("4,4")
+                    .with_mean_dash("12,6")
+                    .with_mean_line_color(BLUE_SATURATED)
+                    .with_mean_line_width(2.5);
+                vertical_bands.push(band);
+
             }
 
             histogram
@@ -126,6 +155,22 @@ impl App {
                 .collect_vec()
         });
 
+        if options.show_calculated_mean || options.show_calculated_std_dev {
+            let mean = k as f64 / n as f64 * 100.0;
+            let variance = k as f64 * (n - k) as f64
+                / ((n as f64).powi(2) * (n + 1) as f64);
+            let std_dev = variance.sqrt() * 100.0;
+            let lower = (mean - std_dev).max(0.0);
+            let upper = mean + std_dev;
+
+            let band = VerticalBand::new(lower, mean, upper, RED_LIGHT)
+                .with_edge_dash("6,6")
+                .with_mean_dash("16,8")
+                .with_mean_line_color(RED_SATURATED)
+                .with_mean_line_width(2.5);
+            vertical_bands.push(band);
+        }
+
         draw_plot(PlotOptions {
             title: options.title,
             dark_mode: options.dark_mode,
@@ -136,6 +181,9 @@ impl App {
             step: true,
             data_1: expected,
             data_2: actual,
+            data_1_color: Some(RED_SATURATED),
+            data_2_color: Some(BLUE_SATURATED),
+            vertical_bands,
         })
     }
 }

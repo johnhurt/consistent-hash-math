@@ -17,16 +17,17 @@ use quill::{
     plot::Plot,
     prelude::{Grid, Interpolation, Legend, Line, Range, Scale},
     series::Series,
-    style::{AxisConfig, GridConfig, LabelConfig, TickConfig, TitleConfig},
+    style::{
+        AxisConfig, GridConfig, LabelConfig, Margin, TickConfig, TitleConfig,
+    },
 };
 use serde::Deserialize;
 use std::{f64::consts::PI, mem, panic};
-use svg::{
-    node::element::{
-        path::Data, Definitions, Group, Marker, Path, Rectangle, TSpan, Text,
-    },
-    Document,
+use svg::node::element::{
+    path::Data, Definitions, Group, Marker, Path, Rectangle, TSpan, Text,
 };
+pub(crate) use svg::Document;
+use svg_legacy::node::element::{Line as SvgLine, Rectangle as SvgRect};
 use wasm_bindgen::prelude::*;
 
 use crate::single_hash_demo::SingleHashDemoOpts;
@@ -42,8 +43,13 @@ pub const WHITE: &str = "#ffffff";
 
 pub const GREEN: &str = "#c0ffc0";
 pub const BLUE: &str = "#c0c0ff";
+pub const BLUE_LIGHT: &str = "#8080ff";
 
 pub const RED: &str = "#ffc0c0";
+pub const RED_LIGHT: &str = "#ff8080";
+
+pub const RED_SATURATED: &str = "#ff5c5c";
+pub const BLUE_SATURATED: &str = "#5c5cff";
 
 #[wasm_bindgen]
 extern "C" {
@@ -237,12 +243,11 @@ pub(crate) fn simulate_histogram(config: &ChConfig) -> HistogramOutput {
     let min = config.x_min;
     let max = config.x_max;
     let width = max - min;
-    let mean = config.k as f64 / config.n as f64;
 
     let mut histogram = vec![0_u32; bins];
     let mut samples = 0;
-    let mut sum = 0.;
-    let mut running_variance = 0.;
+    let mut sample_mean = 0.0;
+    let mut m2 = 0.0;
 
     let mut generator = SegmentGenerator::new(config.n);
 
@@ -255,11 +260,15 @@ pub(crate) fn simulate_histogram(config: &ChConfig) -> HistogramOutput {
         for &segment_sum in
             segment_sums.iter().take(needed.min(segment_sums.len()))
         {
-            sum += segment_sum.0;
-            running_variance += (segment_sum.0 - mean).powi(2);
+            samples += 1;
+            let x = segment_sum.0;
+            let delta = x - sample_mean;
+            sample_mean += delta / samples as f64;
+            let delta2 = x - sample_mean;
+            m2 += delta * delta2;
 
             let raw_index = if width > 0.0 {
-                (segment_sum.0 - min) / width * bins as f64
+                (x - min) / width * bins as f64
             } else {
                 bins as f64 - 1.0
             };
@@ -268,49 +277,85 @@ pub(crate) fn simulate_histogram(config: &ChConfig) -> HistogramOutput {
                 let index = (raw_index.min(bins as f64 - 1.0)) as usize;
                 histogram[index] += 1;
             }
-
-            samples += 1;
         }
     }
 
-    let samples = samples as f64;
+    let samples_f = samples as f64;
 
     let max =
-        histogram.iter().copied().max().unwrap_or_default() as f64 / samples;
+        histogram.iter().copied().max().unwrap_or_default() as f64 / samples_f;
+
+    let std_dev = if samples > 1 {
+        (m2 / (samples_f - 1.0)).sqrt()
+    } else {
+        0.0
+    };
 
     HistogramOutput {
         histogram_fractions: histogram
             .into_iter()
-            .map(|c| c as f64 / samples)
+            .map(|c| c as f64 / samples_f)
             .collect(),
-        mean: sum / samples,
-        std_dev: (running_variance / samples).sqrt(),
+        mean: sample_mean,
+        std_dev,
         max,
-        samples,
+        samples: samples_f,
     }
 }
 
-/// This is an approximation to the pdf of the sum of k segments lengths out of
-/// n total segments. The real formula is
+/// PDF for the length of k adjacent segments out of n total segments on the
+/// unit circle.
 ///
-/// binomial(n - 1, k - 1) * (n - k) * (1-x)^(n - k - 1) * x^(k - 1)
+/// This matches the article's formula directly:
 ///
-/// This approximation uses the stirling approximation for factorials
+///   binomial(n - 1, k) * k * x^(k - 1) * (1 - x)^(n - 1 - k)
+///
+/// The binomial coefficient is approximated with Stirling's formula.
 pub(crate) fn k_segment_pdf_approx(at: f64, n: usize, k: usize) -> f64 {
-    let n = n as f64;
-    let k = k as f64;
+    if k == 0 {
+        return 0.0;
+    }
 
-    // Terms 1-3 are the stirling approximation applied to the
-    // binomial coefficient of (n - 1, k - 1)
-    let t_1 = 0.5 * ((n - 1.) / (2. * PI * (k - 1.) * (n - k))).ln();
-    let t_2 = (k - 1.) * ((n - 1.) / (k - 1.)).ln();
-    let t_3 = (n - k) * ((n - 1.) / (n - k)).ln();
+    // k == n is the degenerate case where the entire ring is always taken.
+    if k == n {
+        return if (at - 1.0).abs() < f64::EPSILON {
+            f64::INFINITY
+        } else {
+            0.0
+        };
+    }
 
-    let t_4 = (n - k).ln();
-    let t_5 = (n - k - 1.) * (1. - at).ln();
-    let t_6 = (k - 1.) * at.ln();
+    let n_f = n as f64;
+    let k_f = k as f64;
+    let nf = n_f - 1.0;
+    let nmk = nf - k_f; // n - 1 - k
 
-    (t_1 + t_2 + t_3 + t_4 + t_5 + t_6).exp()
+    let log_choose = ln_choose_stirling(nf, k_f);
+    let log_k = k_f.ln();
+
+    // When the exponent is zero, the value of the power term is 1 even if the
+    // base is at a boundary (0 or 1), so we skip the log to avoid 0 * -inf.
+    let log_x = if k <= 1 { 0.0 } else { (k_f - 1.0) * at.ln() };
+    let log_1mx = if nmk <= 0.0 {
+        0.0
+    } else {
+        nmk * (1.0 - at).ln()
+    };
+
+    (log_choose + log_k + log_x + log_1mx).exp()
+}
+
+/// ln(C(n, k)) via Stirling's approximation. Returns 0 for the boundary cases
+/// C(n, 0) and C(n, n), whose value is 1.
+fn ln_choose_stirling(n: f64, k: f64) -> f64 {
+    if k <= 0.0 || k >= n {
+        return 0.0;
+    }
+
+    let nmk = n - k;
+    0.5 * (n / (2.0 * PI * k * nmk)).ln()
+        + k * (n / k).ln()
+        + nmk * (n / nmk).ln()
 }
 
 /// This is the pdf function for setups where k = 1. It exists because the k-
@@ -377,6 +422,57 @@ struct PlotOptions {
     step: bool,
     data_1: Vec<(f64, f64)>,
     data_2: Option<Vec<(f64, f64)>>,
+    data_1_color: Option<&'static str>,
+    data_2_color: Option<&'static str>,
+    vertical_bands: Vec<VerticalBand>,
+}
+
+struct VerticalBand {
+    lower: f64,
+    mean: f64,
+    upper: f64,
+    color: &'static str,
+    show_fill: bool,
+    edge_dash_array: &'static str,
+    mean_dash_array: Option<&'static str>,
+    mean_line_color: Option<&'static str>,
+    mean_line_width: f64,
+}
+
+impl VerticalBand {
+    fn new(lower: f64, mean: f64, upper: f64, color: &'static str) -> Self {
+        Self {
+            lower,
+            mean,
+            upper,
+            color,
+            show_fill: true,
+            edge_dash_array: "4,4",
+            mean_dash_array: None,
+            mean_line_color: None,
+            mean_line_width: 2.0,
+        }
+    }
+
+    fn with_edge_dash(mut self, dash: &'static str) -> Self {
+        self.edge_dash_array = dash;
+        self
+    }
+
+    fn with_mean_dash(mut self, dash: &'static str) -> Self {
+        self.mean_dash_array = Some(dash);
+        self
+    }
+
+    fn with_mean_line_color(mut self, color: &'static str) -> Self {
+        self.mean_line_color = Some(color);
+        self
+    }
+
+    fn with_mean_line_width(mut self, width: f64) -> Self {
+        self.mean_line_width = width;
+        self
+    }
 }
 
 fn draw_plot(options: PlotOptions) -> String {
@@ -388,10 +484,16 @@ fn draw_plot(options: PlotOptions) -> String {
         (BLACK, "lightgray")
     };
 
+    let data_1_color = options.data_1_color.unwrap_or(RED);
+    let data_2_color = options.data_2_color.unwrap_or(BLUE);
+
+    let (x_min, x_max) = options.x_range;
+    let (y_min, y_max) = options.y_range;
+
     let s1 = Series::builder()
         .name("Expected")
         .data(options.data_1.clone())
-        .color(RED)
+        .color(data_1_color)
         .line(Line::Solid)
         .interpolation(if options.step { I::Step } else { I::Linear })
         .line_width(3.)
@@ -403,7 +505,7 @@ fn draw_plot(options: PlotOptions) -> String {
         Series::builder()
             .name("Simulated")
             .data(data_2)
-            .color(BLUE)
+            .color(data_2_color)
             .line(Line::Solid)
             .interpolation(if options.step { I::Step } else { I::Linear })
             .line_width(3.)
@@ -426,12 +528,12 @@ fn draw_plot(options: PlotOptions) -> String {
         .x_label(&options.x_label)
         .y_label(&options.y_label)
         .x_range(Range::Manual {
-            min: options.x_range.0,
-            max: options.x_range.1,
+            min: x_min,
+            max: x_max,
         })
         .y_range(Range::Manual {
-            min: options.y_range.0,
-            max: options.y_range.1,
+            min: y_min,
+            max: y_max,
         })
         .axis_config(AxisConfig {
             color: Color::from(fg_color),
@@ -462,6 +564,67 @@ fn draw_plot(options: PlotOptions) -> String {
         .build()
         .to_document()
         .expect("Failed to create plot svg");
+
+    // Draw optional vertical bands (mean +/- std-dev) by injecting SVG shapes
+    // directly into the plot area.
+    for band in &options.vertical_bands {
+        let margin = Margin::default();
+        let plot_left = margin.left as f64;
+        let plot_right = WIDTH - margin.right as f64;
+        let plot_top = margin.top as f64;
+        let plot_bottom = TALL_HEIGHT - margin.bottom as f64;
+        let x_span = x_max - x_min;
+
+        if x_span > 0.0 {
+            let x_to_svg = |x: f64| {
+                plot_left + (x - x_min) / x_span * (plot_right - plot_left)
+            };
+
+            let lower_x = x_to_svg(band.lower);
+            let mean_x = x_to_svg(band.mean);
+            let upper_x = x_to_svg(band.upper);
+
+            // Semi-transparent fill between lower and upper bounds.
+            if band.show_fill {
+                let band_rect = SvgRect::new()
+                    .set("x", lower_x)
+                    .set("y", plot_top)
+                    .set("width", upper_x - lower_x)
+                    .set("height", plot_bottom - plot_top)
+                    .set("fill", band.color)
+                    .set("fill-opacity", 0.2)
+                    .set("stroke", "none");
+                doc = doc.add(band_rect);
+            }
+
+            // Dashed edge lines at the std-dev boundaries.
+            for &x in &[lower_x, upper_x] {
+                let edge = SvgLine::new()
+                    .set("x1", x)
+                    .set("y1", plot_top)
+                    .set("x2", x)
+                    .set("y2", plot_bottom)
+                    .set("stroke", band.color)
+                    .set("stroke-width", 1.5)
+                    .set("stroke-dasharray", band.edge_dash_array);
+                doc = doc.add(edge);
+            }
+
+            // Mean line (solid by default, dashed when requested).
+            let mean_color = band.mean_line_color.unwrap_or(band.color);
+            let mut mean_line = SvgLine::new()
+                .set("x1", mean_x)
+                .set("y1", plot_top)
+                .set("x2", mean_x)
+                .set("y2", plot_bottom)
+                .set("stroke", mean_color)
+                .set("stroke-width", band.mean_line_width);
+            if let Some(dash) = band.mean_dash_array {
+                mean_line = mean_line.set("stroke-dasharray", dash);
+            }
+            doc = doc.add(mean_line);
+        }
+    }
 
     // Quill doesn't allow you to set the background color, so we just remove
     // the background which is always the first child 😂
@@ -573,7 +736,7 @@ pub fn eval_message(app: &mut App, id: String, options: String) -> String {
         "bernoulli-demo" => app.bernoulli_demo(
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
-        "k-hash-pdf" => app.k_hash_pdf_demo(
+        "k-hash-pdf" | "k-hash-pdf-comparison" => app.k_hash_pdf_demo(
             serde_json::from_str(&options).expect("Failed to parse options"),
         ),
         _ => "Unknown id".to_owned(),

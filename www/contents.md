@@ -36,7 +36,7 @@ Unfortunately, this does mean that the result I've already stated above is _also
 
 ### Baby Steps
 
-Let's ease our way in and start with something small. Let's say we have a single server with a single hash that's part of a consistent hash setup with at least 1 more server. How do we determine the distribution for the workload that our server will handle? One easy way to think about this is geometrically. Recall from above that we are remapping the integer hash space to real numbers between 0 and 1; in this representation, the fraction of the work handled by our server is the same as the length of the segment assigned to it (Assuming the hashes of the tasks have a uniform distribution). Below is an interactive demo showing how the size of the region associated with our server can vary compared to the average size.
+Let's ease our way in and start with something small. Let's say we have a single server with a single hash that's part of a consistent hash setup with at least 1 more server. How do we determine the distribution for the workload that our server will handle? One easy way to think about this is geometrically. Recall from above that we are remapping the integer hash space to real numbers between 0 and 1; in this representation, the fraction of the work handled by our server is the same as the length of the segment assigned to it (assuming the hashes of the tasks have a uniform distribution). Below is an interactive demo showing how the size of the region associated with our server can vary compared to the average size.
 
 <div class="diagram-container" id="single-hash-demo">
     <div>
@@ -519,7 +519,7 @@ $$
 
 But in order to write and expression for it, we'll need to do some leg work. Also notice we're bringing ["sigma" notation](https://en.wikipedia.org/wiki/Summation), so now you know things are getting serious.
 
-Recall that we used "[complementary](https://en.wikipedia.org/wiki/Complementary_event)" events to write the CDF for the single-hash case. That was the how we were able to put the probability that the length of the first segment is less than $x$ framed in terms of the probability that all hashes are greater than $x$. This reframing of the problem was important because it put a limit on the location of individual hashes, and each hash has a known uniform and [_independent_](https://en.wikipedia.org/wiki/Independence_(probability_theory)) distribution. That same complementary event trick works here, but not quite as cleanly. The complementary event for the sum of the first $k$ segments $\le$ $x$ is simply that sum of the first $k$ segments is > $x$.
+Recall that we used "[complementary](https://en.wikipedia.org/wiki/Complementary_event)" events to write the CDF for the single-hash case. That was how we were able to put the probability that the length of the first segment is less than $x$ framed in terms of the probability that all hashes are greater than $x$. This reframing of the problem was important because it put a limit on the location of individual hashes, and each hash has a known uniform and [_independent_](https://en.wikipedia.org/wiki/Independence_(probability_theory)) distribution. That same complementary event trick works here, but not quite as cleanly. The complementary event for the sum of the first $k$ segments $\le$ $x$ is simply that sum of the first $k$ segments is > $x$.
 
 $$
 \begin{align*}
@@ -569,9 +569,9 @@ $$
 \text{CDF}_k(x) = 1-P \left( h_{k+1} >x\right)
 $$
 
-While this insight doesn't give use a directly useable set of independent probabilities, it does allow us to simplify our length measuring problem in one of counting. Because if the $k+1$-th smallest hash is $> x$, then it means the total number of hashes less than $x$ must be less than $k+1$. Since we have pinned $h_1$ at 0, we can go a little further and say the the number of unpinned hashes (the only hashes that actually matter in our distribution) must be less than $k$.
+While this insight doesn't give us a directly usable set of independent probabilities, it does allow us to simplify our length measuring problem in one of counting. Because if the $k+1$-th smallest hash is $> x$, then it means the total number of hashes less than $x$ must be less than $k+1$. Since we have pinned $h_1$ at 0, we can go a little further and say the number of unpinned hashes (the only hashes that actually matter in our distribution) must be less than $k$.
 
-Let's introduce some new notation for this idea of counting the number of hashes that are $ \le x $. For a set of $H$ random hashes, we'll let $C(x)$ be the count of hashes that are $<x$. Or if we want we wanted to be cool, we could write this as
+Let's introduce some new notation for this idea of counting the number of hashes that are $ \le x $. For a set of $H$ random hashes, we'll let $C(x)$ be the count of hashes that are $<x$. Or if we wanted to be cool, we could write this as
 
 $$
 C(x) \colonequals \left| \left\{ h \in H :: h<x \right\} \right|
@@ -605,11 +605,11 @@ Okay, so we have successfully kicked the can multiple steps down the road. The l
 
 ### Trials and family
 
-Bernoulli is a big name in mathematics and physics, but that's at least partially because there are _two_ Bernoullis. [Johann](https://en.wikipedia.org/wiki/Johann_Bernoulli) and [Jacob]((https://en.wikipedia.org/wiki/Jacob_Bernoulli)) were brothers and the sons of an apothecary. In addition to saddling them with a cutesy naming scheme, their father was a bit pushy. He pushed one towards a practical career in the spice trade, and the other into a respectable life as a theologian. Somehow they both ended up as famous mathematicians with works heavily geared towards gambling strategies. Jacob (for some reason 😉) wanted to know the "expected winnings for various games of chance" particularly in those with allowing multiple independent rounds and uniform odds of winning. The term [Bernoulli trial](https://en.wikipedia.org/wiki/Bernoulli_trial) comes directly from this research (though the name came literally hundreds of years after the work was published).
+Bernoulli is a big name in mathematics and physics, but that's at least partially because there are _two_ Bernoullis. [Johann](https://en.wikipedia.org/wiki/Johann_Bernoulli) and [Jacob](https://en.wikipedia.org/wiki/Jacob_Bernoulli) were brothers and the sons of an apothecary. In addition to saddling them with a cutesy naming scheme, their father was a bit pushy. He pushed one towards a practical career in the spice trade, and the other into a respectable life as a theologian. Somehow they both ended up as famous mathematicians with works heavily geared towards gambling strategies. Jacob (for some reason 😉) wanted to know the "expected winnings for various games of chance" particularly in those with allowing multiple independent rounds and uniform odds of winning. The term [Bernoulli trial](https://en.wikipedia.org/wiki/Bernoulli_trial) comes directly from this research (though the name came literally hundreds of years after the work was published).
 
 Cool story, bro, but how does this help us with consistent hashing?
 
-So while the Bernoullis' motivations may not have been purely academic, the concept of Bernoulli trials is directly applicable to any situation with repeated tests where the outcomes are binary (yes/no) and the probability of yes is always the same. This could be a series of coin flips, dice rolls, or even 3-point shots (for a very consistent player). We can construct our own trial based on individual hash values. We'll consider a hash a "winner" if it less than $x$.
+So while the Bernoullis' motivations may not have been purely academic, the concept of Bernoulli trials is directly applicable to any situation with repeated tests where the outcomes are binary (yes/no) and the probability of yes is always the same. This could be a series of coin flips, dice rolls, or even 3-point shots (for a very consistent player). We can construct our own trial based on individual hash values. We'll consider a hash a "winner" if it is less than $x$.
 
 <div class="diagram-container" id="bernoulli-demo">
     <div>
@@ -650,7 +650,7 @@ $$
 P(\text{wins }=k) = \binom{n}{k}p^{k}(1-p)^{n-k}
 $$
 
-Since $p$ here is the probability of winning, we've seen enough complementary events ro recognize $1-p$ is a probability of losing. Raising a probability to a power should make your spidey sense tingle. We saw earlier that combining the probability of multiple independent events is done by multiplying them together to get the joint probability, so we can think of this product of powers $p^k(1-p)^{n-k}$ as the probability of winning exactly $k$ times (duh?) and losing $n-k$ times. I don't know about you, but to me that sounds like it should be enough, right? $k$ wins after trying $k + (n-k)=n$ times? That's all the times! If that quantity already encapsulates the thing we want, why do we need the $\binom{n}{k}$?
+Since $p$ here is the probability of winning, we've seen enough complementary events to recognize $1-p$ is a probability of losing. Raising a probability to a power should make your spidey sense tingle. We saw earlier that combining the probability of multiple independent events is done by multiplying them together to get the joint probability, so we can think of this product of powers $p^k(1-p)^{n-k}$ as the probability of winning exactly $k$ times (duh?) and losing $n-k$ times. I don't know about you, but to me that sounds like it should be enough, right? $k$ wins after trying $k + (n-k)=n$ times? That's all the times! If that quantity already encapsulates the thing we want, why do we need the $\binom{n}{k}$?
 
 Even if you haven't seen this equation before, the purpose behind this coefficient is probably something you already understand at an intuitive level. Let me ask you this? If I flip a fair coin 2 times, what's more likely, 2 heads, 2 tails or a head and a tail? You know in your gut that getting a mix of heads and tails is more likely, but if we compute our partial formula: $p^k(1-p)^{n-k}$
 
@@ -730,7 +730,7 @@ There's no end to the interesting things you can do with it or derive it, but I'
 
 ![Boring](assets/boring.webp)
 
-Alright. At this point, we have everything we need to get to answer our question, so let's hit the gas on our arithmetic and make it happen before we get distracted again. We just got to the point where we had a formula for the probability of a specific count of of hashes less than x
+Alright. At this point, we have everything we need to answer our question, so let's hit the gas on our arithmetic and make it happen before we get distracted again. We just got to the point where we had a formula for the probability of a specific count of hashes less than x
 
 $$P(C(x)=i) = \binom{H}{i}x^{i}(1-p)^{H-i}$$
 
@@ -765,11 +765,11 @@ $$
 \begin{align*}
 \text{PDF}_k(x)
     &= \frac{d}{dx}\text{CDF}_k\left( x \right) \\
-    &= \frac{d}{dx}\left(1 - \sum_{i=0}^{k-1}{\binom{H-1}{i}x^{i}(1-x)^{H-1-i}}\right)
+    &= \frac{d}{dx}\left[1 - \sum_{i=0}^{k-1}{\binom{H-1}{i}x^{i}(1-x)^{H-1-i}}\right]
 \end{align*}
 $$
 
-I can feel you trying to space out because they expression is a little gnarly. Lots of symbols with numbers and letters everywhere. Stick with me anyway though, this is where we get one of the most satisfying tricks in math.
+I can feel you trying to space out because the expression is a little gnarly. Lots of symbols with numbers and letters everywhere. Stick with me anyway though, this is where we get one of the most satisfying tricks in math.
 
 ![Cute math](assets/cute.png)
 
@@ -778,7 +778,7 @@ Let's keep turning the crank. We start with a little distribution and product ru
 $$
 \begin{align*}
 \text{PDF}_k(x)
-&= \frac{d}{dx}\left(1 - \sum_{i=0}^{k-1}{\binom{H-1}{i}x^{i}(1-x)^{H-1-i}}\right) \\
+&= \frac{d}{dx}\left[1 - \sum_{i=0}^{k-1}{\binom{H-1}{i}x^{i}(1-x)^{H-1-i}}\right] \\
 &= 0-\sum_{i=0}^{k-1}\binom{H-1}{i}\frac{d}{dx}x^{i}(1-x)^{H-1-i} \\
 &=- \sum_{i=0}^{k-1}\binom{H-1}{i}\left(ix^{i-1}(1-x)^{H-1-i}-(H-1-i)x^{i}(1-x)^{H-2-i}\right)
 
@@ -849,7 +849,7 @@ $$
 \end{align*}
 $$
 
-Which is far prettier than I expected, and let's us continue to turn the crank to get towards our final error measurement. We can also use our same trick to visualize this distribution alongside a simulation to prove that our math is mathing.
+Which is far prettier than I expected, and lets us continue to turn the crank to get towards our final error measurement. We can also use our same trick to visualize this distribution alongside a simulation to prove that our math is mathing.
 
 
 The demo below shows the histogram predicted by the k-hash PDF next to a simulation of the same setup.
@@ -881,15 +881,241 @@ The demo below shows the histogram predicted by the k-hash PDF next to a simulat
     <div class="diagram tall"></div>
 </div>
 
-#### Expected Value
+#### Expected-value and variance | Beta togetha
 
-This is the easiest value to calculate, so I'm not going to belabor things. We can intuitively guess that the expected value for $x$ is going to be. Just as a refresher (since maybe it took a while to get here after starting at the beginning 😝) $x$ here is the total length of $k$ random hash segments out of a total of $H$. We already know that the expected value for the length of a single segment is $1/H$, so it's not much of a stretch to assume that length of $k$ segments added together would be $k/H$. Let's go through the motions to see if our intuition is correct
-
+We could tackle expected value and variance one at a time, but we can save a little time by looking at them both at the same time. Recall our formula for expected value is:
 $$
 \begin{align*}
-
+    \text{Exp}(L)
+        &= \int{x\cdot\text{PDF}(x)dx} \\
 \end{align*}
 $$
 
-### The last chapter
+and variance we can write as
+$$
+\begin{align*}
+\text{Var}(L)
+    &= \int{(x-\text{Exp}(L))^2\cdot\text{PDF}(x)dx} \\
+    &= \int{x^2\cdot\text{PDF}(x)dx} -2\int{x\cdot\text{PDF}(x)dx} +\text{Exp}(L)^2\\
+    &= \int{x^2\cdot\text{PDF}(x)dx} -2\cdot\text{Exp}(L)\int{x\cdot\text{PDF}(x)dx} +\text{Exp}(L)^2\\
+    &= \int{x^2\cdot\text{PDF}(x)dx} -2\cdot\text{Exp}(L)^2 + \text{Exp}(L)^2\\
+    &= \int{x^2\cdot\text{PDF}(x)dx} -\text{Exp}(L)^2\\
+\end{align*}
+$$
 
+Both of which hinge on an integral of a power of $x$ times the PDF. Let's call it $\text{Alpha}(a)$.
+
+$$\text{Alpha}(a) = \int x^a\cdot \text{PDF}(x)dx$$
+
+Expanding the $k$-hash PDF, we get
+
+$$
+\begin{align*}
+\text{Alpha}(a) &= \int{x^a\cdot\text{PDF}_k(x)dx} \\
+&= \int_0^1x^a\cdot\left[\binom{H-1}{k}kx^{k-1}(1-x)^{H-1-k}\right]dx \\
+&= \binom{H-1}{k}k\int_0^1x^{k-1+a}(1-x)^{H-1-k}dx
+\end{align*}
+$$
+
+Here we're going play a little coy 🤭. We'll pretend like we don't know what powers we are raising $x$ and $1-x$ to in this equation. So instead of $x^{k-1+a}(1-x)^{H-1-k}$, we'll say $x^n(1-x)^m$. We'll also collapse the constant at the beginning into a single variable $C$. Let's call this simplified/parameterized function Beta.
+
+$$
+\begin{align*}
+\text{Beta}(C, n, m) = C\int_0^1x^n(1-x)^mdx
+\end{align*}
+$$
+
+We can tackle this with the same integration-by-parts trick we used earlier, but there's a catch: We have to do it _multiple_ times.
+
+![The eye of calculus](assets/the-eye.webp)
+
+Let's start by applying it one time and see what happens.
+
+$$
+\begin{align*}
+    u &= x^n \\
+    dv &= (1-x)^{m}dx \\
+\end{align*}
+
+\begin{align*}
+    \Longrightarrow du &= n\cdot x^{n-1}dx \\
+    \Longrightarrow v &= \frac{-1}{m+1}(1 - x)^{m+1} \\
+\end{align*}
+$$
+
+$$
+\begin{align*}
+\int u\cdot dv &= u\cdot v - \int v\cdot du \\
+&= \left. \left[\frac{-x^n}{m+1}(1-x)^{m+1}\right]\right|_0^1
+-\int_0^1\frac{-n \cdot x^{n-1}}{m+1}(1 - x)^{m+1}
+\end{align*}
+$$
+
+There are two key things to notice with this first-pass integral.
+
+1. The first of the two terms (the $u\cdot v$ part) is evaluated at $x=0$ and $x=1$, and for both of those values of $x$, the first term is $0$, so only the second terms survives
+2. The power of $x$ in the second term went down by 1 while the power of the $(1-x)$ term went up by one, but the general form of the integral is the same, just different values of $m,n$ and $C$
+
+$$
+\begin{align*}
+\text{Beta}(C, n, m) &= C\int_0^1x^n(1-x)^mdx \\
+&= C \frac{n}{m+1} \int_0^1  x^{n-1}(1-x)^{m+1}dx \\
+&= C^\prime \int_0^1x^{n^\prime}(1-x)^{m^\prime} dx
+\end{align*}
+$$
+
+Now we can integrate by parts _again_, but where does is stop?! The key to getting a final solution to this is that every pass through the $u\cdot dv$ machinery reduces the power of $x^n$ by 1, and at some point it will hit zero and we will be left only with the $(1-x)^m$ term. Let's say that the state of our integral after $i$ passes is:
+
+$$
+\begin{align*}
+C_i \int_0^1x^{n_i}(1-x)^{m_i} dx
+\end{align*}
+$$
+
+We can get a formula for any $i$ by looking at the result of taking a single step through our integration process.
+
+$$
+C\int_0^1x^n(1-x)^mdx = C \frac{n}{m+1} \int_0^1  x^{n-1}(1-x)^{m+1} \\
+\text{ }\\ n_0=n, C_0=C, m_0=m \\
+\text{ }\\
+$$
+
+$$
+\begin{align*}
+    n_{i+1} &= n_i-1 \\
+    m_{i+1} &= m_i+1 \\
+    C_{i+1} &= C_i \frac{n_i}{m_i+1} \\
+\end{align*}
+
+\begin{align*}
+    &\Longrightarrow \text{ } \underline{n_i = n-i} \\
+    &\Longrightarrow \text{ } \underline{m_i = m+i} \\
+    &\Longrightarrow \text{ } C_i = C \frac{n(n-1)...(n+1-i)}{(m+1)...(m+i)} = \underline{C\frac{n!m!}{(n-i)!(m+i)!}}\\
+\end{align*}
+$$
+
+If we fast forward to the point where $n_i = 0 \rightarrow i=n$, it means we have taken $n$ passes through our integration machine and we end up with this expression
+
+$$
+\begin{align*}
+\text{Beta}(C,n,m)
+&= C\int_0^1x^n(1-x)^mdx \\
+&= C_n \int_0^1x^{n_n}(1-x)^{m_n} dx \\
+&= C \frac{n!m!}{(n-n)!(m+n)!}\int_0^1x^{n-n}(1-x)^{m+n}dx \\
+&= C \frac{n!m!}{(m+n)!}\int_0^1(1-x)^{m+n}dx \\
+&= C \frac{n!m!}{(m+n)!}\left[\left.\frac{-1}{m+n+1}(1-x)^{m+n+1}\right|_0^1\right] \\
+&= C \frac{n!m!}{(m+n+1)!}\underbrace{\left[-(1-1)^{m+n+1}+(1-0)^{m+n+1}\right]}_{1} \\
+&= \boxed{C \frac{n!m!}{(m+n+1)!}}
+\end{align*}
+$$
+
+which feels like quite the accomplishment until you realize we could have just googled "[Beta function](https://en.wikipedia.org/wiki/Beta_function)," and gotten the answer given to us ... but since we're taking the time to actually learn and understand this, instead of having AI spoonfeed it to us, it's worth doing things the long way. 😅
+
+#### Expected value (for real)
+
+With the identity above we can plow through the last of our calculations.
+
+$$
+\begin{align*}
+\text{Exp}_k(L) &= \int{x\cdot\text{PDF}_k(x)dx} \\
+&= \text{Alpha}(1)\\
+&= \binom{H-1}{k}k\int_0^1x^{k-1+1}(1-x)^{H-1-k}dx\\
+&= \text{Beta}\left(C= \binom{H-1}{k}k, n= k, m= H-1-k\right) \\
+&= \binom{H-1}{k}k\frac{k!(H-1-k)!}{H!} \\
+&= \frac{(H-1)!}{k!(H-1-k)!}\frac{k\cdot k!(H-1-k)!}{H(H-1)!} \\
+&= \boxed{\frac{k}{H}}
+\end{align*}
+$$
+
+Which makes logical sense. It's k times bigger than the expected value of expected length with only a single hash.
+
+#### Variance (for real)
+Keep plowing through
+
+$$
+\begin{align*}
+\text{Var}_k(L) &= \int{x^2\cdot\text{PDF}_k(x)dx} - \text{Exp}_k(L)^2\\
+&= \text{Alpha}(2) - \frac{k^2}{H^2}\\
+&= \binom{H-1}{k}k\int_0^1x^{k-1+2}(1-x)^{H-1-k}dx- \frac{k^2}{H^2}\\
+&= \text{Beta}\left(C= \binom{H-1}{k}k, n= k+1, m= H-1-k\right) - \frac{k^2}{H^2}\\
+&= \binom{H-1}{k}k\frac{(k+1)!(H-1-k)!}{(H+1)!} - \frac{k^2}{H^2} \\
+&= \frac{(H-1)!}{k!(H-1-k)!}\cdot\frac{k(k+1)k!(H-1-k)!}{H(H+1)(H-1)!} - \frac{k^2}{H^2}\\
+&= \boxed{\frac{k(k+1)}{H(H+1)}- \frac{k^2}{H^2}}
+\end{align*}
+$$
+
+Which doesn't seem quite as obvious, but it at least has some nice symmetry. Let's save our skepticism until the next section and get the standard deviation.
+
+#### Standard deviation
+
+Finally an easy one
+
+$$
+\begin{align*}
+\text{SD}_k(L) &= \sqrt{Var_k(L)} \\
+&= \boxed{\sqrt{\frac{k(k+1)}{H(H+1)}- \frac{k^2}{H^2}}}
+\end{align*}
+$$
+
+Let's double check that this standard deviation calculation matches what we actually see in a simulated setup.
+
+<div class="diagram-container" id="k-hash-pdf-comparison">
+    <div>
+        <label for="total_hashes">Total Hashes</label>
+        <input name="total_hashes" type="range" min="2" max="1000" value="20" step="1" oninput="updateOutput(this); clampDependent(this, this.closest('.diagram-container').querySelector('[name=summed_hashes]'))">
+        <output for="total_hashes">20</output>
+    </div>
+    <div>
+        <label for="summed_hashes">Hashes per Server (k)</label>
+        <input name="summed_hashes" type="range" min="1" max="1000" value="3" step="1" oninput="updateOutput(this)">
+        <output for="summed_hashes">3</output>
+    </div>
+    <div>
+        <label for="histogram_bins">Histogram Bins</label>
+        <input name="histogram_bins" type="range" min="1" max="10" value="4" oninput="this.nextElementSibling.value = 1 << this.value">
+        <output for="histogram_bins">16</output>
+    </div>
+    <div>
+        <label for="sample_count">Sample Count</label>
+        <input name="sample_count" type="range" min="1" max="16" value="10" oninput="this.nextElementSibling.value = 1 << this.value">
+        <output for="sample_count">1024</output>
+    </div>
+    <input type="hidden" name="title" value="k-Hash Sum - Mean and Std Dev Comparison">
+    <input type="hidden" name="run_simulation" value="true">
+    <input type="hidden" name="show_simulated_mean" value="true">
+    <input type="hidden" name="show_simulated_std_dev" value="true">
+    <input type="hidden" name="show_calculated_mean" value="true">
+    <input type="hidden" name="show_calculated_std_dev" value="true">
+    <button>Rerun</button>
+    <div class="diagram tall"></div>
+</div>
+
+It shouldn't take much clicking around to convince yourself that with enough samples, the standard deviation and mean converge perfectly with what theory predicts.
+
+#### Error
+
+The last thing we want (the thing you probably came here for in the first place ... Though I did put it in the first paragraph, so I'm sorry if you ended up all the way down here after missing it) is the coefficient of variance. Just to refresh, this tells us how far off the loading on one server can be in terms of what it is expected to handle.
+
+$$
+\begin{align*}
+\text{Err}_k &\colonequals \text{CV}_k(L) \\
+ &= \frac{\text{SD}_k(L)}{\text{Exp}_k(L)} \\
+ &= \frac{\sqrt{\frac{k(k+1)}{H(H+1)}- \frac{k^2}{H^2}}}{k/H} \\
+ &= \sqrt{\frac{H(k+1)}{k(H+1)}-1} \\
+ &= \boxed{\sqrt{\frac{H-k}{k(H+1)}}}
+\end{align*}
+$$
+
+"Wat? wait a minute!" I hear you say. "That's not the formula from the TLDR - J'accuse!" You got me. That was the basic version of the formula for basic people. The people who use the same number of hashes for all servers ($H=kN$). But that's not you and me. No, we know that there are times when you need one server to handle twice the load of another, and in those situations, the formula above is the one you need, but in case you need to be basic, here's the special-case formula again.
+
+$$
+\begin{align*}
+\text{Err}_k(\text{When } H=Nk) = \boxed{\sqrt{\frac{N-1}{kN+1}}}
+\end{align*}
+$$
+
+## The last chapter
+
+And that's it I have hit the limit to what I know/can stand about consistent hashing, statistics and calculus. All the code and markdown is available on github. I have really enjoyed writing this, and if there is anyone out there who enjoyed reading it, give it a star 🤩 otherwise I will never know.
+
+Okay, I guess there is one more thing we should talk about because I'm not even sure what the answer is. For all of the calculations in this document, we have been treating the hash space as a continuous region. We knew this was an approximation, but at what point does that approximation break down and how fast?

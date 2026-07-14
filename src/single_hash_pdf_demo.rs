@@ -75,6 +75,9 @@ impl App {
             step: !options.actual_pdf,
             data_1: expected,
             data_2: actual,
+            data_1_color: Some(RED_SATURATED),
+            data_2_color: Some(BLUE_SATURATED),
+            vertical_bands: vec![],
         })
     }
 }
