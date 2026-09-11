@@ -1,8 +1,12 @@
 # Consistent hashing math
 
+By: Kevin Guthrie
+
+[![Open Source](https://img.shields.io/badge/Open_Source-purple?logo=github)](https://github.com/johnhurt/consistent-hash-math)
+
 This is a derivation of the formulas that describe the distribution of work in systems using consistent hashing to share work. It is part technical paper, part demo and part blog post, so there is a lot of math, some web assembly, but also some jokes. My hope is that it will be complete and compelling but also approachable (and interesting?) for any reader regardless of background.
 
-This is a companion piece to [this blog post](todo) I wrote for Cloudflare, so check it out if you want to hear the complete story and how we used the math here to safely reclaim 100+ TB of RAM on the edge. It also has a basic primer on what consistent hashing even is.
+This is a companion piece to [this blog post](https://blog.cloudflare.com/saving-100-tb-of-ram-with-math) I wrote for Cloudflare, so check it out if you want to hear the complete story and how we used the math here to safely reclaim 100+ TB of RAM on the edge. It also has a basic primer on what consistent hashing even is.
 
 ## Motivation
 

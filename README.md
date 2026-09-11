@@ -1,45 +1,47 @@
-<div align="center">
+# consistent-hash-math
 
-  <h1><code>wasm-pack-template</code></h1>
+An interactive derivation of the formulas that describe the distribution of
+work in systems that use [consistent hashing](https://en.wikipedia.org/wiki/Consistent_hashing)
+to share work. It is part technical paper, part demo and part blog post, so
+there is a lot of math, some WebAssembly, but also some jokes. The goal is
+for it to be complete and compelling, but also approachable (and
+interesting?) for any reader regardless of background.
 
-  <strong>A template for kick starting a Rust and WebAssembly project using <a href="https://github.com/rustwasm/wasm-pack">wasm-pack</a>.</strong>
+It is a companion piece to a [blog post written for
+Cloudflare](https://blog.cloudflare.com/saving-100-tb-of-ram-with-math) about
+how this math was used to safely reclaim 100+ TB of RAM on the edge.
 
-  <p>
-    <a href="https://travis-ci.org/rustwasm/wasm-pack-template"><img src="https://img.shields.io/travis/rustwasm/wasm-pack-template.svg?style=flat-square" alt="Build Status" /></a>
-  </p>
+## TL;DR
 
-  <h3>
-    <a href="https://rustwasm.github.io/docs/wasm-pack/tutorials/npm-browser-packages/index.html">Tutorial</a>
-    <span> | </span>
-    <a href="https://discordapp.com/channels/442252698964721669/443151097398296587">Chat</a>
-  </h3>
+The error in how evenly work is distributed with consistent hashing for $N$
+servers with $k$ hashes each is
 
-  <sub>Built with 🦀🕸 by <a href="https://rustwasm.github.io/">The Rust and WebAssembly Working Group</a></sub>
-</div>
+$$
+    \text{Err}_k = \sqrt{\frac{N-1}{kN+1}}
+$$
 
-## About
+which is very close to the asymptotic $\mathcal{O}\left(\sqrt{1/k}\right)$
+bound found in the literature. The full derivation also yields the general
+formula for any server holding $k$ hashes out of $H$ total
 
-[**📚 Read this template tutorial! 📚**][template-docs]
+$$
+    \text{Err}_k = \sqrt{\frac{H-k}{k(H+1)}}
+$$
 
-This template is designed for compiling Rust libraries into WebAssembly and
-publishing the resulting package to NPM.
+along the way. All it takes to get there is some high-school math and a
+little creativity.
 
-Be sure to check out [other `wasm-pack` tutorials online][tutorials] for other
-templates and usages of `wasm-pack`.
+## Repository layout
 
-[tutorials]: https://rustwasm.github.io/docs/wasm-pack/tutorials/index.html
-[template-docs]: https://rustwasm.github.io/docs/wasm-pack/tutorials/npm-browser-packages/index.html
+* `www/contents.md` - the article itself: the derivation, written in
+  markdown with embedded LaTeX (rendered with KaTeX) and interactive demos
+* `src/` - the Rust source for those interactive demos, compiled to
+  WebAssembly with [`wasm-pack`](https://github.com/rustwasm/wasm-pack) and
+  [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen)
+* `www/` - the webpack site that renders the article and wires up the demos
+* `release.sh` - builds the wasm package and the site for deployment
 
 ## 🚴 Usage
-
-### 🐑 Use `cargo generate` to Clone this Template
-
-[Learn more about `cargo generate` here.](https://github.com/ashleygwilliams/cargo-generate)
-
-```
-cargo generate --git https://github.com/rustwasm/wasm-pack-template.git --name my-project
-cd my-project
-```
 
 ### 🛠️ Build with `wasm-pack build`
 
@@ -53,26 +55,38 @@ wasm-pack build
 wasm-pack test --headless --firefox
 ```
 
-### 🎁 Publish to NPM with `wasm-pack publish`
+### 🏃 Run the site locally
 
 ```
-wasm-pack publish
+cd www
+npm install
+npm start
+```
+
+### 📦 Build the site for deployment
+
+```
+./release.sh
 ```
 
 ## 🔋 Batteries Included
 
-* [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen) for communicating
-  between WebAssembly and JavaScript.
+* [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen) for
+  communicating between WebAssembly and JavaScript.
+* [`quill`](https://crates.io/crates/quill) and
+  [`plotters-canvas`](https://crates.io/crates/plotters-canvas) for
+  rendering charts and diagrams for the demos.
 * [`console_error_panic_hook`](https://github.com/rustwasm/console_error_panic_hook)
   for logging panic messages to the developer console.
-* `LICENSE-APACHE` and `LICENSE-MIT`: most Rust projects are licensed this way, so these are included for you
+* `LICENSE_APACHE` and `LICENSE_MIT`: most Rust projects are licensed this
+  way, so these are included for you
 
 ## License
 
 Licensed under either of
 
-* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-* MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+* Apache License, Version 2.0, ([LICENSE_APACHE](LICENSE_APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+* MIT license ([LICENSE_MIT](LICENSE_MIT) or http://opensource.org/licenses/MIT)
 
 at your option.
 

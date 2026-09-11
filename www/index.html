@@ -47,6 +47,12 @@
       display: block;
     }
 
+    /* Badges (images wrapped in links) should align with text, not center */
+    #markdown-body p a:only-child img {
+      display: inline-block;
+      margin: 0;
+    }
+
     body {
       background-color: var(--bgColor-default);
     }

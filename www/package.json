@@ -52,5 +52,8 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "style-loader": "^4.0.0"
+  },
+  "allowScripts": {
+    "puppeteer@24.37.5": true
   }
 }
