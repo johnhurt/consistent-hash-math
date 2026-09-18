@@ -1,6 +1,8 @@
 # Consistent hashing math
 
-By: Kevin Guthrie
+*And more than you wanted to know about it*
+
+<a class="author-link" href="https://github.com/johnhurt"><img class="author-avatar" src="assets/avatar.png" alt="Kevin Guthrie avatar" /> Kevin Guthrie</a>
 
 [![Open Source](https://img.shields.io/badge/Open_Source-purple?logo=github)](https://github.com/johnhurt/consistent-hash-math)
 
@@ -68,7 +70,7 @@ One important thing to notice that I've glossed over so far is that the region b
 
 ![A representation of the consistent hash ring as a circle](assets/Round%20CH.png)
 
-Looking at the ranges like this reinforces a fact we have already used. The absolute positions for the hashes for the servers do not matter. It's only their positions relative to each other that affect the distribution. In other words, there are no "special" points in the hash output, so we can choose our "zero" point to be anywhere. Setting zero to be equal to one of the hashes has the nice property that we no longer have to consider circular aspect of the hash ring.
+Looking at the ranges like this reinforces a fact we have already used. The absolute positions for the hashes for the servers do not matter. It's only their positions relative to each other that affect the distribution. In other words, there are no "special" points in the hash output, so we can choose our "zero" point to be anywhere. Setting zero to be equal to one of the hashes has the nice property that we no longer have to consider the circular aspect of the hash ring.
 
 Naturally the best point to choose to be our "zero" for simplicity is the hash associated with _our_ server.
 
@@ -102,7 +104,7 @@ $$
     P \left( L \le x \right) = 1 - P \left( L > x \right)
 $$
 
-This is true because $P \left( L \le x \right)$ and $P \left( L > x \right)$ are ["complementary events"](https://en.wikipedia.org/wiki/Complementary_event) which is just a fancy way of saying that one or the other is always true, but never both. We make this change because $P \left( L > x \right)$ is the the same as probability that all the hashes $\left\{ h_2, h_3, ..., h_H\right\}$ are $\ge x$. Since each hash is [independent](https://en.wikipedia.org/wiki/Independence_(probability_theory)) (meaning the value of one hash doesn't affect any other), we can say this probability of all being true is the product of the probability of each being independently true.
+This is true because $P \left( L \le x \right)$ and $P \left( L > x \right)$ are ["complementary events"](https://en.wikipedia.org/wiki/Complementary_event) which is just a fancy way of saying that one or the other is always true, but never both. We make this change because $P \left( L > x \right)$ is the same as the probability that all the hashes $\left\{ h_2, h_3, ..., h_H\right\}$ are $\ge x$. Since each hash is [independent](https://en.wikipedia.org/wiki/Independence_(probability_theory)) (meaning the value of one hash doesn't affect any other), we can say this probability of all being true is the product of the probability of each being independently true.
 
 $$
     \begin{align*}
@@ -180,7 +182,7 @@ Which if we plot, looks like this.
 
 Let's pause for a second before we use the PDF above to calculate the expected value and standard deviation to bring things back to reality. As you might have noticed, the PDF has values _above_ 1. This should be a good clue that the PDF does _not_ give you a way to look up the probability of a specific value ... so then like what good is it? ... and how do you find out the probability of a specific value?
 
-The answer to both of those questions is **histograms**. As an answer to a purely mathematical problem it's maybe a little unsatisfying. Histogram are exceedingly practical tools that we typically use when measuring or visualizing things in the real world like latency or dB levels. The reason they come up here is because of the simplification we made at the very beginning. Our CDF and PDF above are based on the continuous range between 0 and 1 instead of the discrete length that will actually appear in our hash output. That simplification means that each specific length has infinite precision and therefor an infinitesimal probability by its self. In order to get an appreciable/useful value for probability, we have to look at the probability within a specific range of lengths. Plotting the probability between a bunch of different ranges is essentially the definition of a histogram, and the way we calculate the probability in that range is with the PDF (or CDF).
+The answer to both of those questions is **histograms**. As an answer to a purely mathematical problem it's maybe a little unsatisfying. Histograms are exceedingly practical tools that we typically use when measuring or visualizing things in the real world like latency or dB levels. The reason they come up here is because of the simplification we made at the very beginning. Our CDF and PDF above are based on the continuous range between 0 and 1 instead of the discrete length that will actually appear in our hash output. That simplification means that each specific length has infinite precision and therefore an infinitesimal probability by itself. In order to get an appreciable/useful value for probability, we have to look at the probability within a specific range of lengths. Plotting the probability between a bunch of different ranges is essentially the definition of a histogram, and the way we calculate the probability in that range is with the PDF (or CDF).
 
 $$
     \begin{align*}
@@ -208,7 +210,7 @@ Using that definition we can create a new plot based on the derived PDF that sho
     <div class="diagram tall"></div>
 </div>
 
-Notice the plot still follows the same shape as the pdf. This makes sense since the expression $\text{CDF}\left(x_{max}\right) - \text{CDF}\left(x_{min}\right)$ is just a scaled approximation of the PDF at $x$. Calculating the probability of our single segment having a value within a discrete range has the advantage that we can now compare our calculated distribution to some <del>real-world</del> simulated results. Is this necessary? No ... math is math ... but sometimes its helpful to prove to yourself that _your_ math is the right math.
+Notice the plot still follows the same shape as the pdf. This makes sense since the expression $\text{CDF}\left(x_{max}\right) - \text{CDF}\left(x_{min}\right)$ is just a scaled approximation of the PDF at $x$. Calculating the probability of our single segment having a value within a discrete range has the advantage that we can now compare our calculated distribution to some <del>real-world</del> simulated results. Is this necessary? No ... math is math ... but sometimes it's helpful to prove to yourself that _your_ math is the right math.
 
 Below is an interactive demo that allows you to simulate a bunch of single-segment lengths and compare the empirical distribution with the derived one for a given number of hashes.
 
@@ -293,7 +295,7 @@ $$
 
 Which is ... a little underwhelming given the amount of manipulation it took to get there, but it does at least make sense. The expected value is what you get when the whole hash space is split up evenly between all $H$ segments.
 
-Let's move on the standard deviation calculation which is just the square root of the [variance](https://en.wikipedia.org/wiki/Variance),
+Let's move on to the standard deviation calculation which is just the square root of the [variance](https://en.wikipedia.org/wiki/Variance),
 
 $$
     \text{SD}\left(L\right) = \sqrt{\text{Var}\left(L\right)}
@@ -374,7 +376,7 @@ $$
 
 It's worth pausing here at the end to think about what that standard deviation says in practical terms. Remember that (even if we've strayed into the abstract world a bit) this distribution is about how evenly we are sharing work between servers in the physical world. Standard deviation tells us the distance from the mean for _most_ of the values in our distribution. In a sense it's a prediction of how much more or less load a server will handle than expected.
 
-The drawback for standard deviation is that it's defined in absolute terms. You can see from the formula that the standard deviation goes down as the inverse to the total number of hashes. It would be easy to think that you could make a single-hash consistent hashing system more accurate by adding more total hashes, but that is forgetting that the portion of the range covered by a single segment _also_ decreases as the inverse of the total number of hashes. So at $H=100$ the standard deviation is about $0.99\%$, the expected size of the segment is $1\%$, so the size of error on either side of the expected value is almost equal to the expected size.
+The drawback for standard deviation is that it's defined in absolute terms. You can see from the formula that the standard deviation goes down as the inverse of the total number of hashes. It would be easy to think that you could make a single-hash consistent hashing system more accurate by adding more total hashes, but that is forgetting that the portion of the range covered by a single segment _also_ decreases as the inverse of the total number of hashes. So at $H=100$ the standard deviation is about $0.99\%$, the expected size of the segment is $1\%$, so the size of error on either side of the expected value is almost equal to the expected size.
 
 A more useful analog for error in our consistent hashing systems (and the one I have been using until now without explanation) is [coefficient of variation](https://en.wikipedia.org/wiki/Coefficient_of_variation). CV is simply the standard deviation divided by the expected value or more simply, it's the error margin transformed to match the scale of what we expect. In our case the CV is
 
@@ -425,9 +427,9 @@ What if we have just 2 hashes associated with our server? We can choose one of t
     <div class="diagram small"></div>
 </div>
 
-It's tempting to think that we could use the same formula above that we slogged through to describe the distribution for this second segment, and in a way we can. The formula we have is for the distribution for any _single_ segment, so if we were looking our second segment alone without any other information, its length would follow the same distribution we found in the single segment case. Unfortunately if we're considering it by itself, it isn't really "second" anymore.
+It's tempting to think that we could use the same formula above that we slogged through to describe the distribution for this second segment, and in a way we can. The formula we have is for the distribution for any _single_ segment, so if we were looking at our second segment alone without any other information, its length would follow the same distribution we found in the single segment case. Unfortunately if we're considering it by itself, it isn't really "second" anymore.
 
-Considering the both segments at the same time leads us into the world of [conditional probability](https://en.wikipedia.org/wiki/Conditional_probability). It exists to cover the gray area between when you know more than nothing and less than everything about a system. The classic example is removing colored marbles from a bag containing an equal number of red and green marbles. The first marble chosen has an equal chance of being red, but its removal means the second marble is less likely to have the same color as the first simply because there is 1 fewer of that color to choose from.
+Considering both segments at the same time leads us into the world of [conditional probability](https://en.wikipedia.org/wiki/Conditional_probability). It exists to cover the gray area between when you know more than nothing and less than everything about a system. The classic example is removing colored marbles from a bag containing an equal number of red and green marbles. The first marble chosen has an equal chance of being red, but its removal means the second marble is less likely to have the same color as the first simply because there is 1 fewer of that color to choose from.
 
 <div class="diagram-container" id="marble-demo">
     <div>
@@ -457,11 +459,11 @@ We can see an analog in our 2-segment case in how the length of segment 1 affect
 
 ![Different lengths of wire](assets/wires.webp)
 
-It's more like we have $H$ numbered bags, and each bag has a single wire of a random length where the total length is known. What's important here that there are **no "special" bags**. We can [exchange](https://en.wikipedia.org/wiki/Exchangeable_random_variables) any one bag for another, so the probability distribution for the length of the segment in each unopened bag must be the same!
+It's more like we have $H$ numbered bags, and each bag has a single wire of a random length where the total length is known. What's important here is that there are **no "special" bags**. We can [exchange](https://en.wikipedia.org/wiki/Exchangeable_random_variables) any one bag for another, so the probability distribution for the length of the segment in each unopened bag must be the same!
 
 ### Avoid empty space
 
-If you'll recall that in the beginning of the previous section we were trying find the sum of the lengths of two segments. One on the far left of the number line with length $S_1$ and one at a random index $m$ with length $S_m$. In terms of our $H$ wires in bags, we can find the sum of $S_1$ and $S_m$ with a 2-step process
+If you'll recall that in the beginning of the previous section we were trying to find the sum of the lengths of two segments. One on the far left of the number line with length $S_1$ and one at a random index $m$ with length $S_m$. In terms of our $H$ wires in bags, we can find the sum of $S_1$ and $S_m$ with a 2-step process
 
 1. Take the wire from bag 1
 2. Add segment 1 to the segment in bag $m$
@@ -500,16 +502,16 @@ With this fact in hand, we can use almost exactly the same process to get the di
 
 ## Part 2 - More than a single hash
 
-Depending on your perspective, this is where things either get really interesting or this will feel like déjà vu. Thanks to some logic and (somehow) legit probability shell game, we now know the shape of the problem we need to solve to determine the consistent hashing error for a server with $k$ hashes out of a total of $H$. **What is the distribution for sum of the first $k$ segments on the number line?** We already solved this with $k=1$ by cleverly defining a CDF using a little calculus to get from there to a PDF, variance and then finally to the error. Let's forget about being [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) and repeat ourselves.
+Depending on your perspective, this is where things either get really interesting or this will feel like déjà vu. Thanks to some logic and (somehow) legit probability shell game, we now know the shape of the problem we need to solve to determine the consistent hashing error for a server with $k$ hashes out of a total of $H$. **What is the distribution for the sum of the first $k$ segments on the number line?** We already solved this with $k=1$ by cleverly defining a CDF using a little calculus to get from there to a PDF, variance and then finally to the error. Let's forget about being [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) and repeat ourselves.
 
 ### Multi-hash CDF
 
-Recall the definition for a CDF is that it tells us that probability that the thing we are looking for is smaller than a value $x$. We'll denote our CDF for $k$ hashes as
+Recall the definition for a CDF is that it tells us the probability that the thing we are looking for is smaller than a value $x$. We'll denote our CDF for $k$ hashes as
 $$
 \text{CDF}_k(x) = P\left(\sum_{i=1}^{k}{L_i} \le x\right)
 $$
 
-But in order to write and expression for it, we'll need to do some leg work. Also notice we're bringing ["sigma" notation](https://en.wikipedia.org/wiki/Summation), so now you know things are getting serious.
+But in order to write an expression for it, we'll need to do some leg work. Also notice we're bringing ["sigma" notation](https://en.wikipedia.org/wiki/Summation), so now you know things are getting serious.
 
 Recall that we used "[complementary](https://en.wikipedia.org/wiki/Complementary_event)" events to write the CDF for the single-hash case. That was how we were able to put the probability that the length of the first segment is less than $x$ framed in terms of the probability that all hashes are greater than $x$. This reframing of the problem was important because it put a limit on the location of individual hashes, and each hash has a known uniform and [_independent_](https://en.wikipedia.org/wiki/Independence_(probability_theory)) distribution. That same complementary event trick works here, but not quite as cleanly. The complementary event for the sum of the first $k$ segments $\le$ $x$ is simply that sum of the first $k$ segments is > $x$.
 
@@ -612,7 +614,7 @@ $$
 P(\text{wins }=k) = \binom{n}{k}p^{k}(1-p)^{n-k}
 $$
 
-In our case we have $H$ total hashes, but effectively only $H=1$ are independent trials because we are forcing one of them to zero. A "win" for us is a hash less than $x$, so the probability of a win is just $x$. We can now write the probability of getting exactly $i$ wins as
+In our case we have $H$ total hashes, but effectively only $H-1$ are independent trials because we are forcing one of them to zero. A "win" for us is a hash less than $x$, so the probability of a win is just $x$. We can now write the probability of getting exactly $i$ wins as
 
 $$
 \boxed{
@@ -632,7 +634,7 @@ $$
 
 Since $p$ here is the probability of winning, we've seen enough complementary events to recognize $1-p$ is a probability of losing. Raising a probability to a power should make your spidey sense tingle. We saw earlier that combining the probability of multiple independent events is done by multiplying them together to get the joint probability, so we can think of this product of powers $p^k(1-p)^{n-k}$ as the probability of winning exactly $k$ times (duh?) and losing $n-k$ times. I don't know about you, but to me that sounds like it should be enough, right? $k$ wins after trying $k + (n-k)=n$ times? That's all the times! If that quantity already encapsulates the thing we want, why do we need the $\binom{n}{k}$?
 
-Even if you haven't seen this equation before, the purpose behind this coefficient is probably something you already understand at an intuitive level. Let me ask you this? If I flip a fair coin 2 times, what's more likely, 2 heads, 2 tails or a head and a tail? You know in your gut that getting a mix of heads and tails is more likely, but if we compute our partial formula: $p^k(1-p)^{n-k}$
+Even if you haven't seen this equation before, the purpose behind this coefficient is probably something you already understand at an intuitive level. Let me ask you this: If I flip a fair coin 2 times, what's more likely, 2 heads, 2 tails or a head and a tail? You know in your gut that getting a mix of heads and tails is more likely, but if we compute our partial formula: $p^k(1-p)^{n-k}$
 
 $$
 \begin{align*}
@@ -644,7 +646,7 @@ $$
 
 We see that they are the same (and don't add to 1 which is kind of a red flag). The problem is our partial formula and its perfect [commutativity](https://en.wikipedia.org/wiki/Commutative_property) is that it hides the fact that __order matters__.
 
-I'll admit I was being a little obtuse in my statement of the events above. The probability of 1 head 1 tail $P(\text{1 head, 1 tail})$ is only $\frac{1}{4}$ if we consider it to be a different event than $P(\text{1 tail, 1 head})$. In Bernoulli trials (and specifically our consistent hashing case), we are concerned with the total number of each event rather than the order that they happen. In order to know the probability of one total heads and one total tails, we need to add up the probability for all the ways that can happen. Easy for 1 head and 1 tail.
+I'll admit I was being a little obtuse in my statement of the events above. The probability of 1 head 1 tail $P(\text{1 head, 1 tail})$ is only $\frac{1}{4}$ if we consider it to be a different event than $P(\text{1 tail, 1 head})$. In Bernoulli trials (and specifically our consistent hashing case), we are concerned with the total number of each event rather than the order that they happen. In order to know the probability of getting a total of one head and one tail, we need to add up the probability for all the ways that can happen. Easy for 1 head and 1 tail.
 
 $$
 \begin{align*}
@@ -654,7 +656,7 @@ P(\text{Unordered \{1 heads, 1 tails}\}) &= P(\text{1 head, 1 tail}) + P(\text{1
 \end{align*}
 $$
 
-Which means getting a mix of heads and tails is twice as likely as getting 2 heads and matches our interaction.
+Which means getting a mix of heads and tails is twice as likely as getting 2 heads and matches our intuition.
 
 We can formalize this a little better by noting that it's no coincidence that $P(\text{1 head, 1 tail}) = P(\text{1 tail, 1 head})$. Any specific order $hthtth...$ of $H$ heads and $T$ tails is going to have the same probability because the probability of the specific ordering is one big commutable product.
 
@@ -696,7 +698,7 @@ $$
 P(\text{wins }=k) = \underline{\binom{n}{k}}\cdot p^{k}(1-p)^{n-k}
 $$
 
-We see that the binomial coefficient $\binom{n}{k}$ corresponds directly with our order-counting function $M$. This tells us that $\binom{N}{H}$ is simply the number of ways we can order $H$ wins out of $N$ total attempts. Or thought of another way, the number of ways you could _choose_ $H$ attempts from all $N$ to be winners. This is why when professionals (like me 😉) have to say the name of this coefficient aloud, we say don't say "N choose K" which is much less of a mouthful than "The binomial coefficient of N with K"
+We see that the binomial coefficient $\binom{n}{k}$ corresponds directly with our order-counting function $M$. This tells us that $\binom{N}{H}$ is simply the number of ways we can order $H$ wins out of $N$ total attempts. Or thought of another way, the number of ways you could _choose_ $H$ attempts from all $N$ to be winners. This is why when professionals (like me 😉) have to say the name of this coefficient aloud, we say "N choose K", which is much less of a mouthful than "The binomial coefficient of N with K".
 
 The value for the coefficient is honestly less interesting than what it means, but I'll put it here anyway.
 
@@ -712,7 +714,7 @@ There's no end to the interesting things you can do with it or derive it, but I'
 
 Alright. At this point, we have everything we need to answer our question, so let's hit the gas on our arithmetic and make it happen before we get distracted again. We just got to the point where we had a formula for the probability of a specific count of hashes less than x
 
-$$P(C(x)=i) = \binom{H}{i}x^{i}(1-p)^{H-i}$$
+$$P(C(x)=i) = \binom{H-1}{i}x^{i}(1-x)^{H-1-i}$$
 
 Now we can fill that into the CDF formula
 
@@ -735,7 +737,7 @@ $$
 \end{align*}
 $$
 
-Looks good, so let's keep moving. We have our CDF, we just need to turn the cranks to get the PDF, expected value, standard deviation, and finally so let's tackle them one at a time.
+Looks good, so let's keep moving. We have our CDF, we just need to turn the cranks to get the PDF, expected value, standard deviation, and finally the error, so let's tackle them one at a time.
 
 #### PDF
 
@@ -819,7 +821,7 @@ $$
 \end{align*}
 $$
 
-All of the interior pairs in the sum will cancel out, and we will be left with only the first and last terms, so $\text{PDF}_k(x) = A_0(x)-A_k(x)$, and since $A_0(k)$ is trivially zero, our final formula for the PDF is.
+All of the interior pairs in the sum will cancel out, and we will be left with only the first and last terms, so $\text{PDF}_k(x) = A_0(x)-A_k(x)$, and since $A_0(x)$ is trivially zero, our final formula for the PDF is.
 
 $$
 \begin{align*}
@@ -897,7 +899,7 @@ $$
 \end{align*}
 $$
 
-Here we're going play a little coy 🤭. We'll pretend like we don't know what powers we are raising $x$ and $1-x$ to in this equation. So instead of $x^{k-1+a}(1-x)^{H-1-k}$, we'll say $x^n(1-x)^m$. We'll also collapse the constant at the beginning into a single variable $C$. Let's call this simplified/parameterized function Beta.
+Here we're going to play a little coy 🤭. We'll pretend like we don't know what powers we are raising $x$ and $1-x$ to in this equation. So instead of $x^{k-1+a}(1-x)^{H-1-k}$, we'll say $x^n(1-x)^m$. We'll also collapse the constant at the beginning into a single variable $C$. Let's call this simplified/parameterized function Beta.
 
 $$
 \begin{align*}
@@ -933,7 +935,7 @@ $$
 
 There are two key things to notice with this first-pass integral.
 
-1. The first of the two terms (the $u\cdot v$ part) is evaluated at $x=0$ and $x=1$, and for both of those values of $x$, the first term is $0$, so only the second terms survives
+1. The first of the two terms (the $u\cdot v$ part) is evaluated at $x=0$ and $x=1$, and for both of those values of $x$, the first term is $0$, so only the second term survives
 2. The power of $x$ in the second term went down by 1 while the power of the $(1-x)$ term went up by one, but the general form of the integral is the same, just different values of $m,n$ and $C$
 
 $$
@@ -944,7 +946,7 @@ $$
 \end{align*}
 $$
 
-Now we can integrate by parts _again_, but where does is stop?! The key to getting a final solution to this is that every pass through the $u\cdot dv$ machinery reduces the power of $x^n$ by 1, and at some point it will hit zero and we will be left only with the $(1-x)^m$ term. Let's say that the state of our integral after $i$ passes is:
+Now we can integrate by parts _again_, but where does it stop?! The key to getting a final solution to this is that every pass through the $u\cdot dv$ machinery reduces the power of $x^n$ by 1, and at some point it will hit zero and we will be left only with the $(1-x)^m$ term. Let's say that the state of our integral after $i$ passes is:
 
 $$
 \begin{align*}
@@ -1074,7 +1076,7 @@ It shouldn't take much clicking around to convince yourself that with enough sam
 
 #### Error
 
-The last thing we want (the thing you probably came here for in the first place ... Though I did put it in the first paragraph, so I'm sorry if you ended up all the way down here after missing it) is the coefficient of variance. Just to refresh, this tells us how far off the loading on one server can be in terms of what it is expected to handle.
+The last thing we want (the thing you probably came here for in the first place ... Though I did put it in the first paragraph, so I'm sorry if you ended up all the way down here after missing it) is the coefficient of variation. Just to refresh, this tells us how far off the loading on one server can be in terms of what it is expected to handle.
 
 $$
 \begin{align*}
@@ -1096,6 +1098,8 @@ $$
 
 ## The last chapter
 
-And that's it I have hit the limit to what I know/can stand about consistent hashing, statistics and calculus. All the code and markdown is available on github. I have really enjoyed writing this, and if there is anyone out there who enjoyed reading it, give it a star 🤩 otherwise I will never know.
+And that's it I have hit the limit to what I know/can stand about consistent hashing, statistics and calculus. All the code and markdown is available on github. I have really enjoyed writing this, and if there is anyone out there who enjoyed reading it, give it a [star](https://github.com/johnhurt/consistent-hash-math) 🤩 otherwise I will never know.
 
-Okay, I guess there is one more thing we should talk about because I'm not even sure what the answer is. For all of the calculations in this document, we have been treating the hash space as a continuous region. We knew this was an approximation, but at what point does that approximation break down and how fast?
+Okay, I guess there is one more thing we should talk about because I'm not even sure what the answer is. For all of the calculations in this document, we have been treating the hash space as a continuous region. We knew this was an approximation, but at what point does that approximation break down and how fast? The main article shows that the error starts growing with the expected number of collisions, but I haven't been able to get a formula for it for more than one hash. These same tricks I used for the continuous case work for a single hash, but break down when you start trying sum lengths colliding segments.
+
+I guess the real last thing I should talk about is AI. All the math and words here are mine (let's claim those typos were on purpose). Most of the code for the demos is mine too, but I got lazy at the end and had an AI write the later ones.
