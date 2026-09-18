@@ -1086,7 +1086,7 @@ $$
 \end{align*}
 $$
 
-"Wat? wait a minute!" I hear you say. "That's not the formula from the TLDR - J'accuse!" You got me. That was the basic version of the formula for basic people. The people who use the same number of hashes for all servers ($H=kN$). But that's not you and me. No, we know that there are times when you need one server to handle twice the load of another, and in those situations, the formula above is the one you need, but in case you need to be basic, here's the special-case formula again.
+"Wat? wait a minute!" I hear you say. "That's not the formula from the TLDR - J'accuse!" You're right. You got me. That was the basic version of the formula for basic people. The people who use the same number of hashes for all servers ($H=kN$). But that's not you and me. No, we know that there are times when you need one server to handle twice the load of another, and in those situations, the formula above is the one you need, but in case you need to be basic, here's the special-case formula again.
 
 $$
 \begin{align*}
