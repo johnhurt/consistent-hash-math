@@ -83,30 +83,17 @@ impl App {
             ));
         }
 
-        let mut text_group = Group::new().set(
-            "transform",
-            format!("translate({},{})", WIDTH / 2., MARGIN / 10.),
-        );
-
-        let small_font = FONT_SIZE * 0.9;
-
-        text_group = text_group.add(
-            text("", 0., 0., options.dark_mode)
-                .set("text-align", "right")
-                .set("font-size", small_font)
-                .set("text-anchor", "end")
-                .add(TSpan::new("1 - x = ").set("x", 0).set("dy", small_font))
-                .add(TSpan::new(format!("{:.1}%", (1. - x) * 100.)))
-                .add(TSpan::new("% > x = ").set("x", 0).set("dy", small_font))
-                .add(TSpan::new(format!("{:0.1}%", result * 100.))),
-        );
-
         let small_font = FONT_SIZE * 0.9;
         let math_x = || {
             TSpan::new("x")
                 .set("font-family", "KaTeX_Math")
                 .set("font-style", "italic")
         };
+
+        let mut text_group = Group::new().set(
+            "transform",
+            format!("translate({},{})", WIDTH / 2., MARGIN / 10.),
+        );
 
         text_group = text_group.add(
             text("", 0., 0., options.dark_mode)
